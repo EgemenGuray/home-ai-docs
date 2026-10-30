@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Home Automation + AI Agent Design List</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="home-automation--ai-agent-design-list">Home Automation + AI
+Agent Design List</h1>
+<p>Oct 16, 2026</p>
+<p>One Claude-based agent becomes the single decision maker for the home
+and for background agent work, replacing Alexa entirely. Home Assistant
+on the Mac mini executes device actions; custom voice devices and a
+custom mobile app are the only front ends. It is built in phases: the
+house and voice first on the Mac mini with cloud Claude, then agents
+with a rented cloud VM, then local AI and agents on the Mac Studio M5
+Ultra. Security comes first throughout: nothing is reachable from the
+internet, and no agent can use a password, send or spend without your
+approval on your phone.</p>
+<h2 id="glossary">Glossary</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning here</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Phase</td>
+<td>A delivery stage from the roadmap: 0 home and voice, 1 agents
+without the Studio, 2 Mac Studio, 3 leftovers</td>
+</tr>
+<tr class="even">
+<td>Home Assistant (HA)</td>
+<td>Open-source home hub on the Mac mini; holds every device and
+executes commands</td>
+</tr>
+<tr class="odd">
+<td>Agent</td>
+<td>The single Claude-based decision maker that answers voice, app and
+chat requests</td>
+</tr>
+<tr class="even">
+<td>Orchestrator</td>
+<td>The part of the agent that plans work and starts subagents</td>
+</tr>
+<tr class="odd">
+<td>Subagent</td>
+<td>A worker agent doing one job (research, an app task) in its own
+workspace</td>
+</tr>
+<tr class="even">
+<td>Workspace</td>
+<td>A container or VM where a subagent runs, with shell, browser and
+optional desktop</td>
+</tr>
+<tr class="odd">
+<td>Computer use</td>
+<td>Claude controlling a desktop with screenshots, mouse clicks and
+keystrokes</td>
+</tr>
+<tr class="even">
+<td>Egress route</td>
+<td>The internet exit a workspace uses: home home IP, a NordVPN country,
+or the router VPN</td>
+</tr>
+<tr class="odd">
+<td>Message bus</td>
+<td>The channel subagents, the orchestrator and you use to talk; a
+policy decides who may talk to whom</td>
+</tr>
+<tr class="even">
+<td>Vault</td>
+<td>Vaultwarden, the self-hosted password manager that replaces Chrome's
+saved passwords</td>
+</tr>
+<tr class="odd">
+<td>Credential release</td>
+<td>Sending one login from your phone to one agent job after you approve
+it</td>
+</tr>
+<tr class="even">
+<td>Passkey / security key</td>
+<td>Sign-in that cannot be phished or read off a linked device the way
+an SMS code can</td>
+</tr>
+<tr class="odd">
+<td>Pull request (PR)</td>
+<td>A proposed code change you review and approve before it is
+deployed</td>
+</tr>
+<tr class="even">
+<td>MCP</td>
+<td>Model Context Protocol; the standard way the agent calls tools such
+as Home Assistant</td>
+</tr>
+<tr class="odd">
+<td>Voice server</td>
+<td>Service on the Mac Studio (Phase 2) that turns speech to text, calls
+the agent, and speaks the reply</td>
+</tr>
+<tr class="even">
+<td>Show-style / Dot-style device</td>
+<td>Custom voice devices: one with a touch screen, one with an LED
+dot-matrix display</td>
+</tr>
+<tr class="odd">
+<td>Wake word</td>
+<td>The spoken name that starts listening, detected on the device
+itself</td>
+</tr>
+<tr class="even">
+<td>STT / TTS</td>
+<td>Speech-to-text and text-to-speech</td>
+</tr>
+<tr class="odd">
+<td>Zigbee / Thread / Matter</td>
+<td>Local smart-home radio and device standards handled by a USB stick
+on the Mac mini</td>
+</tr>
+<tr class="even">
+<td>VLAN</td>
+<td>A separate network on the same routers, so groups of devices are
+kept apart</td>
+</tr>
+<tr class="odd">
+<td>Tailscale</td>
+<td>Private network that lets the app reach home without opening
+ports</td>
+</tr>
+<tr class="even">
+<td>WireGuard / NordLynx</td>
+<td>Fast VPN protocol; NordLynx is NordVPN's version of it</td>
+</tr>
+<tr class="odd">
+<td>Gluetun</td>
+<td>Container that connects to a VPN (here NordVPN) and offers it as a
+proxy</td>
+</tr>
+</tbody>
+</table>
+<h2 id="goals">Goals</h2>
+<ul>
+<li><strong>One decision maker that feels like Jarvis.</strong> Every
+request, from any room, the app or chat, goes to the same agent with the
+same memory; it follows the conversation as you move and speaks up when
+something needs you.</li>
+<li><strong>Reliable home control.</strong> Lights, climate, media and
+appliances respond fast and keep working when the AI side is down; both
+Macs run unattended and recover by themselves after power cuts.</li>
+<li><strong>Custom front ends.</strong> Echo Show-like and Echo
+Dot-with-clock-like devices built in-house, plus one polished mobile app
+for control, chat (text, voice, image, video) and agent work.</li>
+<li><strong>Agentic work.</strong> Several subagents run at once, each
+using CLI and GUI tools from an assigned location or IP, talking to each
+other only where allowed, acting on your accounts (expenses, job
+applications, spreadsheets, even their own code) with you able to
+approve or step in from the app.</li>
+<li><strong>Secure by default.</strong> Nothing is reachable from the
+internet, the servers hold none of your personal accounts, and a
+compromised server can neither spend money nor read your 2FA codes.</li>
+<li><strong>Hybrid AI.</strong> Cloud Claude for hard reasoning, local
+models on the Mac Studio (Phase 2) for privacy, speed and offline
+use.</li>
+</ul>
+<p>Non-goals: Alexa or Echo devices in any role; the Windows PC as
+compute (it stays a controlled device only); automated CAPTCHA solving;
+any open inbound port or internet-facing service; agents reading
+Chrome's saved passwords; unattended bulk actions that break a site's
+terms.</p>
+<h2 id="acceptance-criteria">Acceptance criteria</h2>
+<p>Targets are proposals to confirm. Each is grouped by the phase that
+must first meet it and is checked by a test or a dashboard in the last
+section.</p>
+<p><strong>Phase 0, home and voice:</strong></p>
+<ul>
+<li>Every listed device (Nest, Dreame, Hue, Govee, SwitchBot, Samsung TV
+and soundbar, B&amp;O, Plex, Apple TV, TP-Link routers, Windows PC
+power) is controllable from voice and the app, every Phase 0 feature in
+the Alexa parity table works by voice, and every Alexa routine you use
+today has been migrated.</li>
+<li>Simple voice commands ("lights off") complete in under 1.5 s from
+end of speech; answers start speaking in under 3 s.</li>
+<li>The wake word triggers on at least 95% of attempts at 3 m in a
+normal room, with under 1 false wake per day per device.</li>
+<li>Lights, climate and automations keep working when the internet, or
+from Phase 2 the Mac Studio, is down.</li>
+<li>After a power cut the Mac mini comes back and every service restarts
+with nobody touching it; neither Mac ever sleeps.</li>
+<li>An external port scan of the home home IP finds no open ports; the
+app works away from home only over Tailscale.</li>
+<li>No server Mac is signed into your Apple ID, iCloud, Messages, Chrome
+or personal email, so no 2FA code can be read on a server.</li>
+<li>Monthly cloud AI spend has an alert threshold and a hard cap.</li>
+</ul>
+<p><strong>Phase 1, agents:</strong></p>
+<ul>
+<li>At least 3 subagents run at once, each with shell, browser and
+desktop (Phase 2: 5 or more, with 20+ possible).</li>
+<li>Each subagent's public IP matches its assigned route at job start,
+and its traffic stops if the route drops.</li>
+<li>A message between two agents not allowed by policy is blocked and
+logged.</li>
+<li>From the app you can watch any agent's screen live, pause it,
+approve or deny a step, take over mouse and keyboard, and kill it.</li>
+<li>Logins, purchases, sending messages, deletions and code changes
+always wait for an approval given on your phone with Face ID; nothing on
+a server can approve.</li>
+<li>Passwords never appear in model prompts, logs or screenshots, and a
+released login ends with the job.</li>
+<li>Agents cannot buy gift cards, transfer money or buy crypto; any
+purchase is capped and alerts you.</li>
+<li>The transit reimbursement job (see Example jobs) runs end to end
+with two approvals: the login and the email.</li>
+<li>An agent's code change that fails tests or health checks never stays
+deployed: it is blocked or rolled back automatically.</li>
+<li>Heads-up alerts (leave now, rain, door left open) arrive unprompted
+in the room you are in or on your phone, and never during quiet
+hours.</li>
+<li>Every agent action and message is logged and searchable for 30
+days.</li>
+</ul>
+<h2 id="overall-design">Overall design</h2>
+<p>The target design (Phase 2) splits the system across two always-on
+Macs so the house never depends on the AI side: the Mac mini runs Home
+Assistant, the vault and the network routes, and the Mac Studio runs the
+voice server, the agent runtime and local models. Every front end talks
+only to the agent; the agent controls devices only through Home
+Assistant's MCP server. Earlier phases run the same containers on the
+mini and a rented cloud VM, so moving to the Studio is a redeploy.</p>
+<p>[embedded content: target design (Phase 2) · two hosts]</p>
+<p><strong>Phases:</strong> each phase is usable on its own; tasks for
+each are in the <a
+href="https://claude.ai/code/artifact/d7976fe8-3e15-48d9-9e10-f86c6c4a57c3">roadmap</a>,
+and sections below say where a phase differs.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>What you get</th>
+<th>Runs on</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0: Home and voice</td>
+<td>Alexa retired with full everyday parity (timers, alarms, reminders,
+announcements, music, weather, news, stocks, lists); Home Assistant,
+voice devices, app and widgets; morning briefing; network, VPN and
+always-on Mac setup</td>
+<td>Mac mini + cloud Claude</td>
+</tr>
+<tr class="even">
+<td>1: Agents, no Studio</td>
+<td>3+ subagents with shell, browser and desktop; egress routes;
+password vault with phone approval; approvals and take over from the
+app; agent code changes by pull request; full memory, heads-up alerts
+and delegation</td>
+<td>Mac mini + cloud Claude + one rented cloud VM for workspaces</td>
+</tr>
+<tr class="odd">
+<td>2: Mac Studio</td>
+<td>Local models and voice server with interruptible replies; 5+
+subagents (20+ possible) and up to 2 macOS VMs; screens that anticipate
+and routine suggestions; cloud VM retired; the Macs watch each
+other</td>
+<td>Mac Studio + Mac mini</td>
+</tr>
+<tr class="even">
+<td>3: Leftovers</td>
+<td>Vision, per-person voices, per-room presence, 4G/5G backup line, hot
+spare, Valetudo, app extras</td>
+<td>Both</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Hardware roles:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Machine</th>
+<th>Phase 0</th>
+<th>Phase 1</th>
+<th>Phase 2 onward</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mac mini (8GB), always on, on a UPS</td>
+<td>Home Assistant OS VM, Zigbee/Thread stick, Assist voice, Tailscale,
+backups, Uptime Kuma</td>
+<td>Adds agent service, message bus, egress routes, vault and credential
+broker</td>
+<td>House, egress routes, vault, broker, Assist fallback; agent service
+moves to the Studio</td>
+</tr>
+<tr class="even">
+<td>Rented cloud VM (16 to 32GB)</td>
+<td>Not used</td>
+<td>Agent workspaces and Langfuse, all traffic routed through home</td>
+<td>Retired</td>
+</tr>
+<tr class="odd">
+<td>Mac Studio M5 Ultra</td>
+<td>Not used</td>
+<td>Not used</td>
+<td>Agent runtime, workspaces, macOS VMs, local models, voice server,
+app backend</td>
+</tr>
+<tr class="even">
+<td>Plex server</td>
+<td>Unchanged; used through its API</td>
+<td>Same</td>
+<td>Same</td>
+</tr>
+<tr class="odd">
+<td>Windows PC (RTX 5090)</td>
+<td>Not compute; controlled device only (Wake on LAN, power)</td>
+<td>Same</td>
+<td>Same</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key decisions:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Decision</th>
+<th>Chosen</th>
+<th>Rejected and why</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Voice front end</td>
+<td>Custom Show-style and Dot-style devices</td>
+<td>Alexa/Echo: no raw audio for third parties, unreliable, Alexa stays
+the decision maker</td>
+</tr>
+<tr class="even">
+<td>Decision maker</td>
+<td>One Claude-based agent</td>
+<td>Split brains (Alexa + HA + agents) give inconsistent answers</td>
+</tr>
+<tr class="odd">
+<td>Home hub</td>
+<td>Home Assistant OS VM on the Mac mini</td>
+<td>Homey, Hubitat, SmartThings: fewer integrations, no agent hooks</td>
+</tr>
+<tr class="even">
+<td>App</td>
+<td>Custom app forked from HA Companion</td>
+<td>Off-the-shelf apps: too much friction; WhatsApp: business-account
+rules</td>
+</tr>
+<tr class="odd">
+<td>AI</td>
+<td>Cloud Claude plus local models on the Studio</td>
+<td>Local only: weaker at multi-step tool use; cloud only: no offline or
+private path</td>
+</tr>
+<tr class="even">
+<td>Agent isolation</td>
+<td>One container or VM per subagent</td>
+<td>Agents directly on the host: one bad page can reach your files and
+home</td>
+</tr>
+<tr class="odd">
+<td>Phase 1 workspaces</td>
+<td>Rented cloud VM routed through home</td>
+<td>Workspaces on the 8GB mini: not enough memory</td>
+</tr>
+<tr class="even">
+<td>Passwords</td>
+<td>Vaultwarden on the mini; each login released from your phone</td>
+<td>Agents reading Chrome's passwords: no safe API, all or nothing;
+vault key on a server: one break-in leaks every password</td>
+</tr>
+<tr class="odd">
+<td>Remote access</td>
+<td>Tailscale only, zero open ports</td>
+<td>Port forwarding or the router's VPN server: an exposed machine is
+the most common way in</td>
+</tr>
+<tr class="even">
+<td>Agent self-changes</td>
+<td>Pull request, tests, your approval, automatic rollback</td>
+<td>Agents editing live config: one bad change breaks the house</td>
+</tr>
+</tbody>
+</table>
+<h2 id="detailed-design">Detailed design</h2>
+<h3 id="home-control">Home control</h3>
+<p>Home Assistant OS runs in a UTM VM on the Mac mini (Phase 0), set to
+auto-start after power loss, with a Zigbee/Thread USB coordinator
+(SMLIGHT SLZB or Sonoff, about CA$35 to 85) and one or two ESP32
+Bluetooth proxies for SwitchBot. Nest and Dreame stay cloud-dependent;
+everything else is local.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Device</th>
+<th>Integration</th>
+<th>Local or cloud</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Nest thermostat</td>
+<td>Google Nest (SDM API)</td>
+<td>Cloud push</td>
+<td>One-time US<span
+class="math inline">5(<em>a</em><em>b</em><em>o</em><em>u</em><em>t</em><em>C</em><em>A</em></span>7)
+Device Access fee and a Google Cloud project (<a
+href="https://www.home-assistant.io/integrations/nest">HA docs</a>)</td>
+</tr>
+<tr class="even">
+<td>Dreame vacuum</td>
+<td>Dreame Vacuum (HACS) or Valetudo firmware</td>
+<td>Cloud, or local with Valetudo</td>
+<td>Valetudo needs rooting; check model support (<a
+href="https://joinhomeshift.com/home-assistant-vacuum/">guide</a>)</td>
+</tr>
+<tr class="odd">
+<td>Philips Hue</td>
+<td>Hue (official)</td>
+<td>Local</td>
+<td>Via the Hue Bridge</td>
+</tr>
+<tr class="even">
+<td>Govee lights</td>
+<td>Govee lights local + HACS cloud for older models</td>
+<td>Mostly local</td>
+<td>Enable LAN control per device</td>
+</tr>
+<tr class="odd">
+<td>SwitchBot buttons and IR</td>
+<td>SwitchBot Bluetooth, Cloud or Matter via Hub</td>
+<td>Local</td>
+<td>IR remotes learned on the SwitchBot Hub</td>
+</tr>
+<tr class="even">
+<td>Samsung TV</td>
+<td>Samsung Smart TV + SmartThings</td>
+<td>Local</td>
+<td>Wake from off via SmartThings or Wake on LAN</td>
+</tr>
+<tr class="odd">
+<td>Samsung soundbar</td>
+<td>SmartThings or HACS soundbar integration</td>
+<td>Cloud</td>
+<td>Input and volume</td>
+</tr>
+<tr class="even">
+<td>B&amp;O soundbar</td>
+<td>Bang &amp; Olufsen (Mozart platform)</td>
+<td>Local</td>
+<td>Recent Mozart-based models</td>
+</tr>
+<tr class="odd">
+<td>Windows PC</td>
+<td>Wake on LAN + HASS.Agent</td>
+<td>Local</td>
+<td>Power on, sleep, shutdown</td>
+</tr>
+<tr class="even">
+<td>TP-Link Wi-Fi 7 routers</td>
+<td>TP-Link router or Deco (HACS)</td>
+<td>Local</td>
+<td>Presence detection, reboot</td>
+</tr>
+<tr class="odd">
+<td>Plex</td>
+<td>Plex Media Server</td>
+<td>Local</td>
+<td>Now playing, play to clients</td>
+</tr>
+<tr class="even">
+<td>Apple TV</td>
+<td>Apple TV (pyatv)</td>
+<td>Local</td>
+<td>Power, apps, playback</td>
+</tr>
+</tbody>
+</table>
+<p>Integration names other than Nest and Dreame are from general
+knowledge; confirm per model during setup.</p>
+<h3 id="voice-devices">Voice devices</h3>
+<p>The devices are thin clients: they detect the wake word locally,
+stream audio to the voice pipeline (Assist on the mini in Phases 0 and
+1, the voice server on the Studio from Phase 2), and show what the agent
+sends back. They make no decisions.</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Show-style</th>
+<th>Show-mini</th>
+<th>Dot-style</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Like</td>
+<td>Echo Show 8</td>
+<td>Echo Spot</td>
+<td>Echo Dot with Clock</td>
+</tr>
+<tr class="even">
+<td>Brain</td>
+<td>Raspberry Pi 5</td>
+<td>Waveshare ESP32-P4 3.4" round board (<a
+href="https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-3.4c.htm?sku=31523">about
+CA$93</a>, mics and speaker included)</td>
+<td>ESP32-S3</td>
+</tr>
+<tr class="odd">
+<td>Microphones</td>
+<td>ReSpeaker XVF3800 4-mic array, USB (<a
+href="https://thepihut.com/products/respeaker-xmos-xvf3800-ai-powered-4-mic-array-for-clear-voice-even-in-noise">about
+CA$100</a>)</td>
+<td>Onboard dual mics with echo cancellation</td>
+<td>ReSpeaker XVF3800, I2S</td>
+</tr>
+<tr class="even">
+<td>Display</td>
+<td>Pi Touch Display 2, 7" (<a
+href="https://raspberrypi.com/products/touch-display-2">about
+CA$85</a>)</td>
+<td>Built-in 800×800 round</td>
+<td>32×8 or 64×32 LED matrix behind fabric</td>
+</tr>
+<tr class="odd">
+<td>Speaker</td>
+<td>2 drivers + class-D amp</td>
+<td>Included 2W</td>
+<td>1 driver + I2S amp</td>
+</tr>
+<tr class="even">
+<td>Software</td>
+<td>Linux kiosk with the app UI + voice client</td>
+<td>ESPHome or ESP-IDF with LVGL</td>
+<td>Forked Voice PE ESPHome firmware</td>
+</tr>
+<tr class="odd">
+<td>Parts (approx.)</td>
+<td>CA$330 to 430</td>
+<td>CA$100 to 130</td>
+<td>CA$130 to 185</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pipeline in Phase 0 and 1:</strong> devices are Home
+Assistant Assist satellites on the mini, with cloud speech-to-text for
+open questions, local Speech-to-Phrase for fixed commands and Piper for
+speech.</p>
+<p><strong>Pipeline from Phase 2:</strong> on-device wake word
+(microWakeWord or openWakeWord, custom name) → audio over WebRTC
+(LiveKit) to the voice server on the Studio → local STT (Whisper or
+Parakeet) → agent → streaming TTS (Piper locally, or a cloud voice) →
+screen cards over WebSocket. Assist on the mini stays as the fallback.
+In both, simple device commands are matched by Home Assistant's intent
+engine first, so they skip the LLM.</p>
+<p><strong>Enclosures:</strong> 3D-printed with fabric fronts; speaker
+quality is the hardest part to match an Echo.</p>
+<h3 id="mobile-app-and-chat">Mobile app and chat</h3>
+<p>One custom app (iOS and Android) is the main interface, forked from
+the Home Assistant Companion apps so login, push notifications and
+widgets come for free.</p>
+<ul>
+<li>Home tab (Phase 0): rooms, scenes and device tiles, live from Home
+Assistant's WebSocket API; widgets, Control Center controls and an
+Action button shortcut to talk to the assistant.</li>
+<li>Assistant tab (Phase 0): text, push-to-talk and hands-free voice
+with streaming replies; photo and video input to the same agent in Phase
+3.</li>
+<li>Agents tab (Phase 1): task board, live screen per agent, pause, take
+over, kill, and Face ID approvals for logins, purchases, sending and
+code changes (see Multi-agent runtime).</li>
+<li>Stack: native Swift and Kotlin from the Companion forks; realtime
+voice via LiveKit; remote access only over Tailscale; Apple Developer
+Program US<span
+class="math inline">99/<em>y</em><em>r</em>(<em>a</em><em>b</em><em>o</em><em>u</em><em>t</em><em>C</em><em>A</em></span>141).</li>
+<li>Fallback channel: a Telegram bot for chat and notifications while
+the app is being built; WhatsApp is out of scope because it needs a
+business account and a separate number.</li>
+</ul>
+<h3 id="everyday-assistant-alexa-parity">Everyday assistant (Alexa
+parity)</h3>
+<p>Everything you use Alexa for today has a home here. Home Assistant
+owns anything time- or device-based, so timers, alarms and routines keep
+working without the internet; the agent answers questions and calls web
+services.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>How it works</th>
+<th>Handled by</th>
+<th>Phase</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Timers</td>
+<td>Several named timers per room ("pasta timer, 10 minutes"); countdown
+on the screen or dot matrix; rings on that device</td>
+<td>Assist timers on each voice device</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>Alarms</td>
+<td>Per-room alarms with snooze and stop; a wake-up can fade lights in
+and start music</td>
+<td>Home Assistant calendar or helpers + automations</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Reminders</td>
+<td>One-off or recurring, set by voice or app; spoken in the room you
+are in, plus a phone push</td>
+<td>Home Assistant calendar and to-do + presence</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>Announcements and intercom</td>
+<td>"Announce dinner is ready" to every room or one; talk back from the
+app like Drop In</td>
+<td>TTS to chosen voice devices; two-way audio through LiveKit</td>
+<td>0 (two-way in 2)</td>
+</tr>
+<tr class="odd">
+<td>Weather</td>
+<td>Current conditions, forecast, rain and weather alerts; card on
+screens</td>
+<td>Environment Canada or Open-Meteo integration</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>News briefing</td>
+<td>Morning briefing from sources you choose, summarized and spoken;
+news radio or podcasts on request</td>
+<td>Agent with RSS or a news API; Music Assistant for audio</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Stocks</td>
+<td>Watchlist quotes, "how's my portfolio", price alerts</td>
+<td>Agent tool on a market data API; Home Assistant sensors for
+alerts</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>Music and radio</td>
+<td>Spotify, Apple Music over AirPlay, Plex music, internet radio;
+multi-room groups; "play jazz in the kitchen"</td>
+<td>Music Assistant add-on to voice devices, soundbars and Apple TV</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Shopping and to-do lists</td>
+<td>Add by voice, see in the app</td>
+<td>Home Assistant to-do lists, optionally synced to Todoist or Google
+Tasks</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>Calendar</td>
+<td>"What's on tomorrow?", add events</td>
+<td>Google or iCloud calendar through Home Assistant + agent</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Questions</td>
+<td>General knowledge, maths, conversions, translation, spelling, with
+web search</td>
+<td>Agent (Claude)</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>Routines</td>
+<td>"Good morning", "leaving", "bedtime", time- or sensor-triggered</td>
+<td>Home Assistant scripts and automations; new ones by voice through
+Agent code changes</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Groups and scenes</td>
+<td>"Turn off everything downstairs", room-aware commands</td>
+<td>Home Assistant areas and local intents</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>Find my phone</td>
+<td>Rings your phone even on silent</td>
+<td>Critical notification through the app</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Sleep sounds and quiet hours</td>
+<td>White noise with a sleep timer; no announcements and lower volume at
+night per room</td>
+<td>Music Assistant + a schedule helper</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>Packages</td>
+<td>"Where's my package?"</td>
+<td>Agent reading shipping emails (Gmail, read-only)</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>Voice shopping</td>
+<td>"Reorder paper towels"</td>
+<td>Agent with phone approval and the spending limits in Security</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>Per-person voices</td>
+<td>Your reminders and calendar versus a guest's</td>
+<td>Speaker recognition</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<p>Not copied: phone calls through the speakers and the Alexa skills
+store; the agent's tools replace skills.</p>
+<h3 id="proactive-assistant-jarvis-layer">Proactive assistant (Jarvis
+layer)</h3>
+<p>On top of Alexa parity, the agent knows the context of the house and
+acts on it. Every proactive message goes through one rule: speak in the
+room you are in if it is urgent, otherwise push to the phone, and stay
+silent during quiet hours unless it is a safety alert.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Capability</th>
+<th>What it feels like</th>
+<th>How</th>
+<th>Phase</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Memory</td>
+<td>Knows people, preferences and past requests; "what do you know about
+me?" and "forget that" work</td>
+<td>Shared memory store in the agent service, editable from the app</td>
+<td>0 basic, 1 full</td>
+</tr>
+<tr class="even">
+<td>Natural conversation</td>
+<td>Follow-ups without the wake word for a few seconds; you can
+interrupt a long answer</td>
+<td>Assist follow-up mode; barge-in on the voice server</td>
+<td>0, interrupt in 2</td>
+</tr>
+<tr class="odd">
+<td>Follows you</td>
+<td>Answers in the room you are in; a conversation started in the
+kitchen continues on the phone</td>
+<td>Presence from phones and devices; one conversation per person across
+front ends</td>
+<td>0 house-level, 3 per-room with mmWave</td>
+</tr>
+<tr class="even">
+<td>Briefings</td>
+<td>Morning briefing on first motion in the kitchen: weather, calendar,
+transit delays, news, stocks, packages; short evening wrap-up</td>
+<td>Scheduled agent job with presence trigger</td>
+<td>0 scheduled, 1 contextual</td>
+</tr>
+<tr class="odd">
+<td>Heads-up alerts</td>
+<td>"Leave in 10 minutes for your 3 pm", rain before you head out, door
+left open, laundry done, an unexpected card charge</td>
+<td>Agent watches calendar, transit, weather and Home Assistant events
+and decides whether to speak, push or stay quiet</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>Screens that anticipate</td>
+<td>Show devices put up the relevant card on their own: timer, doorbell,
+next meeting, now playing</td>
+<td>Agent pushes cards to screens</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>Delegation</td>
+<td>"Handle this" starts agent jobs and reports back wherever you
+are</td>
+<td>Orchestrator and subagents</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>Suggestions</td>
+<td>"You dim the lights at 10 every night; make it a routine?"</td>
+<td>Pattern mining over Home Assistant history; accepted ideas become
+automations through Agent code changes</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>Vision</td>
+<td>"What am I holding?" from the phone camera; "who came to the door?"
+from a doorbell or security camera</td>
+<td>Claude image input; local vision model for cameras so footage stays
+home</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>Away and safety mode</td>
+<td>Simulates presence when away, alerts on smoke, leaks or doors</td>
+<td>Home Assistant automations; safety alerts ignore quiet hours</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ai-models">AI models</h3>
+<p>The agent routes each request to the cheapest model that can do it
+well, and falls back to local models when the cloud is unreachable.</p>
+<p>The agent service doubles as a local harness (E1.12) with the
+features of Muse, Cowork, Dispatch, OpenClaw and ChatGPT: projects, chat
+sessions, background tasks you can steer or stop, skills, MCP
+connectors, a heartbeat, Telegram and a web console on the tailnet. Its
+model layer is provider-neutral: Claude stays the default decision
+maker, and OpenAI, Gemini, OpenRouter or a local model on the Studio can
+answer under the same approvals and CAD cap; private requests use local
+models only. Feature comparison: <a
+href="https://claude.ai/artifact/TP6vM4fUw5KPnHYGQRBGYy">Agent harness:
+feature comparison and plan</a>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Where</th>
+<th>Price per million tokens in / out</th>
+<th>Used for</th>
+<th>From</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Claude Opus 5.5</td>
+<td>Cloud</td>
+<td>US<span
+class="math inline">4/20(<em>a</em><em>b</em><em>o</em><em>u</em><em>t</em><em>C</em><em>A</em></span>5.70
+/ 28.50)</td>
+<td>Planning, hard multi-step agent jobs</td>
+<td>Phase 0</td>
+</tr>
+<tr class="even">
+<td>Claude Sonnet 5.5</td>
+<td>Cloud</td>
+<td>US<span
+class="math inline">2/10(<em>a</em><em>b</em><em>o</em><em>u</em><em>t</em><em>C</em><em>A</em></span>2.85
+/ 14.25)</td>
+<td>Default conversation brain, tool use, images</td>
+<td>Phase 0</td>
+</tr>
+<tr class="odd">
+<td>Claude Haiku 5.5</td>
+<td>Cloud</td>
+<td>US<span
+class="math inline">0.10/0.50(<em>a</em><em>b</em><em>o</em><em>u</em><em>t</em><em>C</em><em>A</em></span>0.14
+/ 0.71)</td>
+<td>Intent routing, summaries, notification text</td>
+<td>Phase 0</td>
+</tr>
+<tr class="even">
+<td>Open-weight LLM (100B to 200B class, 4-bit)</td>
+<td>Mac Studio</td>
+<td>Electricity only</td>
+<td>Private requests, offline fallback</td>
+<td>Phase 2</td>
+</tr>
+<tr class="odd">
+<td>Whisper or Parakeet, Piper</td>
+<td>Mac Studio</td>
+<td>Electricity only</td>
+<td>Speech-to-text, text-to-speech</td>
+<td>Phase 2</td>
+</tr>
+</tbody>
+</table>
+<p>Cloud prices are Anthropic list prices, billed in US dollars;
+consumer subscriptions do not cover API use. 256GB of Studio memory is
+the suggested size (one large local model plus 20+ workspaces).</p>
+<h3 id="multi-agent-runtime">Multi-agent runtime</h3>
+<p>Each subagent runs in its own workspace with a shell, a browser and a
+desktop, exits through an assigned route, talks only to allowed peers,
+and can be watched and taken over from the app.</p>
+<p>[embedded content: multi-agent runtime · control, workspaces,
+egress]</p>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Job</th>
+<th>Build on</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Orchestrator</td>
+<td>Splits a request into subtasks; picks workspace, route, peers and
+model for each; collects results</td>
+<td>Claude Agent SDK</td>
+</tr>
+<tr class="even">
+<td>Workspace manager</td>
+<td>Creates, snapshots and destroys workspaces; attaches the egress
+route</td>
+<td>Docker (Phase 1 cloud VM); OrbStack and Tart for macOS VMs (Phase
+2); Parallels or UTM for an occasional Windows on Arm VM</td>
+</tr>
+<tr class="odd">
+<td>Workspaces</td>
+<td>Linux desktop (shell, Chromium, VNC), macOS VM, CLI-only</td>
+<td>Fork of Anthropic's computer-use demo container or Kasm Workspaces
+images</td>
+</tr>
+<tr class="even">
+<td>Message bus + policy</td>
+<td>Agent-to-agent and human-to-agent messages; allow-list per pair;
+full log</td>
+<td>NATS (subjects per task)</td>
+</tr>
+<tr class="odd">
+<td>Credential broker</td>
+<td>Relays login requests to your phone and encrypted logins back to one
+workspace; never holds the vault key</td>
+<td>Small service on the mini; Bitwarden SDK in the app</td>
+</tr>
+<tr class="even">
+<td>Control plane</td>
+<td>Live screens, approvals, pause, take over, kill</td>
+<td>App Agents tab; screens via noVNC, WebRTC in Phase 2</td>
+</tr>
+<tr class="odd">
+<td>Tools</td>
+<td>Home Assistant MCP server, web search, calendar, Gmail, file
+storage, Plex API, notifications</td>
+<td>MCP servers and APIs</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Placement:</strong> in Phase 1 the orchestrator, message bus,
+broker and routes run on the mini, and workspaces plus Langfuse run on
+the cloud VM; in Phase 2 everything except the routes, vault and broker
+moves to the Studio with the same images.</p>
+<p><strong>Tool order for a task:</strong> APIs and MCP first, then
+browser automation (Playwright or browser-use) for websites, and
+computer use (screenshots, mouse, keyboard) only for apps with no other
+interface.</p>
+<p><strong>Per-agent policy (example):</strong></p>
+<pre class="csv"><code>agent,workspace,route,may_talk_to,may_request_logins,needs_approval_for
+expenses,linux-desktop,home,orchestrator;writer,card-site;gmail,each login;sending
+jobs,linux-desktop,home,orchestrator;writer,linkedin,each login;each application
+research-de,linux-desktop,nord-de,orchestrator;writer,none,purchases
+writer,cli-only,none,orchestrator;expenses;jobs;research-de,none,nothing</code></pre>
+<p><strong>Human intervention:</strong> an approval request pauses the
+agent and sends a push notification with Approve and Deny. Approvals are
+signed by a key in your phone's Secure Enclave after Face ID and checked
+by the runtime, so nothing on a server can approve on your behalf. Take
+over gives you mouse and keyboard in the live view; the agent resumes
+with a note of what you did. Typed messages join the agent's
+conversation; Kill destroys the workspace and keeps its log.</p>
+<p><strong>Capacity (approximate):</strong> Phase 1 runs 3 desktop
+workspaces at once on a 16 to 32GB cloud VM. From Phase 2 a Linux
+desktop workspace uses 1 to 2GB, so a 256GB Studio runs 20+ alongside a
+large local model; macOS allows at most 2 macOS VMs at a time per
+Mac.</p>
+<h3 id="passwords-and-credentials">Passwords and credentials</h3>
+<p>Your passwords move from Chrome into a self-hosted vault. Agents
+never hold the vault: they get one login at a time, released from your
+phone after you approve it (Phase 1).</p>
+<p><strong>Moving off Chrome:</strong></p>
+<ol type="1">
+<li>Run Vaultwarden (open-source Bitwarden server, about 100MB of
+memory) on the mini, reachable only over Tailscale, and use the official
+Bitwarden apps and browser extension with it on your phone and
+laptop.</li>
+<li>Export Chrome's passwords (Google Password Manager &gt; Settings
+&gt; Export passwords, a CSV file), import them, then delete the CSV and
+turn off Chrome's offer to save passwords so the vault is the only
+copy.</li>
+<li>Rotate weak or reused passwords, starting with Google, Amazon, your
+bank and your Apple ID, and move those to passkeys or security
+keys.</li>
+<li>Put logins agents may ever request in an "agents" collection;
+banking stays out until you opt a site in.</li>
+</ol>
+<p><strong>Releasing a login to an agent:</strong></p>
+<ol type="1">
+<li>The subagent asks the credential broker for a login, giving the
+site, job, reason and route.</li>
+<li>Your phone shows the job, site, exit IP and planned action; you
+approve with Face ID.</li>
+<li>The app decrypts only that item on the phone and sends it encrypted
+to the requesting workspace's one-time key; the server relays only
+ciphertext, so a hacked server cannot get passwords.</li>
+<li>The workspace browser fills the fields directly, outside the model's
+view; screenshots mask password fields and logs never hold the
+value.</li>
+<li>One-time codes come from the vault under the same approval, or you
+type them by taking over; passkey-only sites always need your take
+over.</li>
+<li>When the job ends the site is logged out and the workspace
+destroyed. Low-risk sites may keep an encrypted browser profile on the
+Studio; email, bank and Amazon never do.</li>
+</ol>
+<p>1Password with a service account is simpler to set up but leaves a
+token on the server, which this threat model rules out.</p>
+<h3 id="agent-code-changes">Agent code changes</h3>
+<p>Agents may write code for their own skills, tools, Home Assistant
+automations and integrations, but a change reaches the house only as a
+pull request you approve: skills and automations from Phase 1, the
+runtime itself from Phase 2.</p>
+<ol type="1">
+<li>All code and config live in git on a self-hosted Gitea or a private
+GitHub repository.</li>
+<li>A coding subagent works on a branch in a CLI workspace, writes
+tests, and opens a pull request with a plain summary.</li>
+<li>Checks run unit tests, linters, Home Assistant's config check, and a
+replay of recent requests against a staging copy.</li>
+<li>The app shows the summary and diff, and you approve on your
+phone.</li>
+<li>Deploy tags a release and runs health checks; any failure rolls back
+to the previous tag and alerts you.</li>
+</ol>
+<p>The policy file, approval rules, credential broker, egress routes and
+this deploy pipeline are protected: an agent's pull request cannot
+change them, only you can.</p>
+<h3 id="example-jobs">Example jobs</h3>
+<p>These jobs show the pieces working together; each uses a logged-in
+browser, released logins, files and email APIs, and stops for approval
+where shown.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Job</th>
+<th>How it runs</th>
+<th>Route</th>
+<th>You approve</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>transit reimbursement</td>
+<td>Logs into the card site, downloads the month's transactions, picks
+out transit pass charges, builds an Excel sheet and summary, drafts the
+email in Gmail through the Gmail API</td>
+<td>home</td>
+<td>The login, then sending</td>
+</tr>
+<tr class="even">
+<td>LinkedIn job applications</td>
+<td>Searches roles matching saved criteria, tailors the résumé and cover
+letter, fills each application up to Submit</td>
+<td>home</td>
+<td>The login, then each submission</td>
+</tr>
+<tr class="odd">
+<td>Spreadsheets</td>
+<td>Data work on .xlsx files with Python in a CLI workspace; Excel
+itself in a macOS VM (Phase 2) for macros, pivots and charts; files from
+OneDrive, Google Drive or iCloud through their APIs</td>
+<td>none</td>
+<td>Overwriting an original (a copy is saved first)</td>
+</tr>
+<tr class="even">
+<td>Fix or extend itself</td>
+<td>Writes a new skill or automation as described in Agent code
+changes</td>
+<td>none</td>
+<td>The merge and deploy</td>
+</tr>
+<tr class="odd">
+<td>Monthly paperwork</td>
+<td>Downloads bills and receipts from utility, phone and card sites,
+files them, and flags unusual charges</td>
+<td>home</td>
+<td>Each new login</td>
+</tr>
+<tr class="even">
+<td>Bookings and price watches</td>
+<td>Compares flights, hotels or products from several countries, then
+books a restaurant or appointment</td>
+<td>nord-&lt;country&gt; to compare, home to book</td>
+<td>Any booking or purchase</td>
+</tr>
+</tbody>
+</table>
+<p>LinkedIn's user agreement forbids automated tools on the site, so
+applications stay few and reviewed, and an account restriction is a real
+risk you accept.</p>
+<h3 id="always-on-mac-setup">Always-on Mac setup</h3>
+<p>Both Macs run as headless servers: they never sleep, restart by
+themselves after a power cut, start every service at boot, and can be
+reached only over Tailscale. The mini is set up in Phase 0, the Studio
+in Phase 2.</p>
+<p><strong>Before anything else:</strong> a Mac that was previously a
+personal machine starts clean before it becomes a server. Erase it
+(Erase All Content and Settings), reinstall macOS, restore no apps or
+settings from old backups, and rotate every password ever used on
+it.</p>
+<p><strong>Power and restart:</strong></p>
+<ol type="1">
+<li><code>sudo pmset -a sleep 0 disksleep 0 displaysleep 10 powernap 0 autorestart 1 womp 1</code>,
+and in System Settings &gt; Energy turn on "Prevent automatic sleeping",
+"Start up automatically after a power failure" and "Wake for network
+access"; Low Power Mode off.</li>
+<li><code>sudo systemsetup -setrestartfreeze on</code> so a frozen Mac
+restarts itself.</li>
+<li>UPS over USB: in the UPS settings the Studio shuts down first (for
+example at 50%) and the mini last (at 20%); the mini, router and Zigbee
+stick share the UPS.</li>
+<li>Services start at boot as launchd jobs: the Home Assistant VM
+through UTM's <code>utmctl</code> (App Nap off for UTM), containers with
+restart policies in OrbStack or Docker, and the standalone Tailscale
+system daemon so it is up before anyone logs in.</li>
+<li>Automatic security responses on, automatic macOS upgrades off;
+install updates monthly in a maintenance window with
+<code>sudo fdesetup authrestart</code> so the Mac comes back by
+itself.</li>
+</ol>
+<p><strong>Logging in by itself without being exposed:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Mac mini (house)</th>
+<th>Mac Studio (agents)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>FileVault</td>
+<td>Off, so it boots straight to its services after a power cut</td>
+<td>On; planned restarts use authrestart, and an unplanned power loss
+waits for your unlock and alerts you</td>
+</tr>
+<tr class="even">
+<td>Login</td>
+<td>Auto-login to a standard "hub" user that only runs services; the
+screen locks immediately after login</td>
+<td>Same "hub" user after unlock</td>
+</tr>
+<tr class="odd">
+<td>Why</td>
+<td>The house must come back alone; nothing personal is stored on it and
+vault data is encrypted end to end</td>
+<td>It holds browser sessions and agent data, so encryption at rest
+wins</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Hardening on both Macs:</strong></p>
+<ul>
+<li>A separate admin account with a long unique passphrase from the
+vault, never used day to day; the hub user cannot install software.</li>
+<li>No Apple ID, iCloud, Messages, FaceTime, Handoff, iPhone Mirroring,
+Chrome sign-in or personal email; your phone is never paired to a
+server.</li>
+<li>macOS firewall on in stealth mode; remote login and screen sharing
+only over Tailscale, with Tailscale SSH keys and password logins turned
+off.</li>
+<li>Tailscale access rules: only your phone and laptop reach admin
+ports; workspaces reach only the proxy and message-bus ports.</li>
+</ul>
+<h3 id="network-vpn-and-tp-link-setup">Network, VPN and TP-Link
+setup</h3>
+<p>The network is set up once in Phase 0: the TP-Link Wi-Fi 7 mesh
+splits the home into four networks, nothing is forwarded from the
+internet, and from Phase 1 agent traffic exits through named routes.
+Feature names vary by TP-Link model and firmware (Archer, Deco or
+Omada), so confirm each one on your model.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Network (VLAN or SSID)</th>
+<th>Members</th>
+<th>Internet</th>
+<th>Can reach</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Main</td>
+<td>Phones, laptops, both Macs, Apple TV, Plex, Windows PC</td>
+<td>Full, through the home IP</td>
+<td>Everything</td>
+</tr>
+<tr class="even">
+<td>IoT</td>
+<td>Lights, Nest, Dreame, TVs, soundbars, hubs, voice devices</td>
+<td>Only the cloud services a device needs</td>
+<td>Only the Macs' service ports (no client isolation, so HA can
+discover devices)</td>
+</tr>
+<tr class="odd">
+<td>Guest</td>
+<td>Visitors</td>
+<td>Full</td>
+<td>Nothing local</td>
+</tr>
+<tr class="even">
+<td>Lab (Phase 1)</td>
+<td>Workspaces that must exit through the router VPN</td>
+<td>Only through the router's VPN client, with a kill switch</td>
+<td>Only the mini's proxy and message-bus ports</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Router configuration:</strong></p>
+<ol type="1">
+<li>Update firmware on every unit; the main unit is the router and the
+rest are mesh nodes, with wired backhaul where possible; Wi-Fi 7 MLO on
+the main network only.</li>
+<li>Long unique admin password, remote management off, WPS off, UPnP
+off, no port forwarding; the TP-Link cloud account uses 2FA.</li>
+<li>Networks as above, with 2.4 GHz allowed on IoT and band steering off
+for devices that drop.</li>
+<li>DHCP reservations for both Macs, the Hue Bridge, SwitchBot Hub, TVs,
+soundbars, Apple TV, Plex and the Windows PC; Wake on LAN allowed to the
+PC.</li>
+<li>mDNS reflection between Main and IoT so Home Assistant finds
+devices; if the model cannot, give the mini a second interface on
+IoT.</li>
+<li>Local DNS on the router or the AdGuard Home add-on in Home
+Assistant.</li>
+<li>Tailscale on the mini as subnet router and on every phone; the
+TP-Link VPN server stays off and is only a documented fallback.</li>
+<li>Home Assistant TP-Link or Deco integration for presence, WAN status
+and reboot; the router configuration is backed up with the HA
+backups.</li>
+<li>A 4G/5G backup line comes later (Phase 3).</li>
+</ol>
+<p><strong>Egress routes (Phase 1 onward):</strong> each route is a
+proxy on the mini; the workspace manager attaches one per workspace, and
+the job checks its public IP and country before starting. In Phase 1 the
+cloud VM's workspaces send all traffic over Tailscale to these routes
+and are blocked from the internet otherwise, so a dropped route fails
+closed; in Phase 2 the Studio's workspaces reach them over the LAN.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Route</th>
+<th>How</th>
+<th>Use for</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>home</td>
+<td>Home home IP through a plain proxy</td>
+<td>Logged-in accounts, lowest bot-check friction</td>
+</tr>
+<tr class="even">
+<td>nord-&lt;country&gt;</td>
+<td>Gluetun container per NordVPN location</td>
+<td>Location-specific results and prices</td>
+</tr>
+<tr class="odd">
+<td>router-vpn</td>
+<td>TP-Link VPN client (NordLynx) on the Lab network, with a kill
+switch</td>
+<td>A dedicated workspace that must always exit from one country</td>
+</tr>
+</tbody>
+</table>
+<p>CAPTCHAs are handled by using a stable IP, the site's official API,
+or a push notification asking you to solve it; no automated solvers.</p>
+<p><strong>NordVPN setup:</strong></p>
+<ol type="1">
+<li>Generate NordLynx (WireGuard) credentials in your Nord account for
+manual setup.</li>
+<li>Run one Gluetun container per needed country on the mini (for
+example nord-de, nord-us-ny), with proxy ports open only to workspaces;
+cap the count to fit the mini's memory.</li>
+<li>Gluetun's kill switch and NordVPN DNS stop traffic and lookups from
+leaking if a tunnel drops.</li>
+<li>Test the router client on the Lab network only, and confirm Main and
+IoT still exit from the home IP.</li>
+</ol>
+<p>NordVPN's own app is not used on the Macs, because it would move all
+traffic, including Home Assistant, onto the VPN.</p>
+<h3 id="security-and-threat-model">Security and threat model</h3>
+<p>Assume any server can be broken into. The model is a common attack
+chain: an internet-exposed machine with a weak password leads to email
+and shopping account takeovers, fraudulent purchases, and 2FA codes read
+through a phone synced to that machine. Every step of that chain is
+closed here:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Attack step</th>
+<th>Control</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Reach a Mac from the internet</td>
+<td>No port forwards, UPnP or remote router management; Tailscale only,
+with access rules; a monthly external port scan</td>
+</tr>
+<tr class="even">
+<td>Guess a weak password</td>
+<td>Long unique passwords from the vault; SSH keys only; a separate
+admin account</td>
+</tr>
+<tr class="odd">
+<td>Use the Mac's signed-in accounts</td>
+<td>Servers hold no Apple ID, iCloud, Chrome profile or personal
+email</td>
+</tr>
+<tr class="even">
+<td>Read 2FA codes from a linked phone</td>
+<td>No Messages or Continuity on servers; passkeys or security keys on
+Google, Amazon, the bank and Apple ID; SMS 2FA removed where a site
+allows</td>
+</tr>
+<tr class="odd">
+<td>Spend money</td>
+<td>Agents cannot buy gift cards, transfer money or buy crypto;
+purchases need phone approval and use a low-limit virtual card; every
+card charge alerts you</td>
+</tr>
+<tr class="even">
+<td>Get passwords or approvals from a server</td>
+<td>The vault key and approval key live only on your phone</td>
+</tr>
+<tr class="odd">
+<td>Trick an agent (prompt injection)</td>
+<td>Pages, emails and other agents' messages are data; they cannot
+change policy, approvals or routes</td>
+</tr>
+</tbody>
+</table>
+<p>Agents also use a Home Assistant user limited to the entities they
+need (locks and garage doors need approval), API keys are released to
+services from the vault rather than stored in workspaces, and every job
+has a token budget under a monthly spend cap.</p>
+<h2 id="cost">Cost</h2>
+<p>All amounts are in Canadian dollars and approximate; Sources explains
+the conversions.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Item</th>
+<th>Phase</th>
+<th>One-time</th>
+<th>Monthly</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Radios: Zigbee/Thread stick, 2 Bluetooth proxies</td>
+<td>0</td>
+<td>CA$60 to 115</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>UPS for the Mac mini, router and Zigbee stick</td>
+<td>0</td>
+<td>CA$140 to 285</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Voice devices: e.g. 2 Show-style + 4 Dot-style</td>
+<td>0</td>
+<td>CA$1,180 to 1,600</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Nest Device Access</td>
+<td>0</td>
+<td>CA$7</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Apple Developer Program</td>
+<td>0</td>
+<td></td>
+<td>CA$141 per year</td>
+</tr>
+<tr class="even">
+<td>Cloud Claude API</td>
+<td>0</td>
+<td></td>
+<td>CA$14 to 71 at household use, more with heavy agent work
+(estimate)</td>
+</tr>
+<tr class="odd">
+<td>Vaultwarden</td>
+<td>1</td>
+<td>Free</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Rented cloud VM, 16 to 32GB</td>
+<td>1 only</td>
+<td></td>
+<td>CA$40 to 150 depending on provider (estimate)</td>
+</tr>
+<tr class="odd">
+<td>Mac Studio M5 Ultra</td>
+<td>2</td>
+<td>From CA<span
+class="math inline">7, 799(<em>M</em>5<em>M</em><em>a</em><em>x</em><em>f</em><em>r</em><em>o</em><em>m</em><em>C</em><em>A</em></span>3,499);
+256GB memory costs more, so confirm Apple Canada's configured price</td>
+<td>Electricity</td>
+</tr>
+</tbody>
+</table>
+<p>NordVPN, the TP-Link routers and the Mac mini are already owned.</p>
+<h2 id="monitoring-observability-and-high-availability">Monitoring,
+observability and high availability</h2>
+<p>The house must keep working when the internet or, from Phase 2, the
+Mac Studio is down, and every other failure must alert you and be
+recoverable from backups. In Phases 0 and 1 the mini watches everything;
+Phase 2 adds a watcher on the Studio so the two Macs watch each
+other.</p>
+<h3 id="monitoring-and-alerts">Monitoring and alerts</h3>
+<table>
+<thead>
+<tr class="header">
+<th>What</th>
+<th>Tool</th>
+<th>Alert when</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Host health of the Macs (CPU, memory, disk, temperature)</td>
+<td>Beszel or Prometheus node exporter + Grafana</td>
+<td>Disk over 85%, Mac mini memory over 90%, an unexpected reboot or
+sleep</td>
+</tr>
+<tr class="even">
+<td>Power</td>
+<td>UPS status into Home Assistant</td>
+<td>On battery, battery low</td>
+</tr>
+<tr class="odd">
+<td>Service uptime: HA, voice, agent runtime, NATS, vault, broker,
+Tailscale</td>
+<td>Uptime Kuma on the mini, plus one on the Studio from Phase 2</td>
+<td>A check fails twice in a row</td>
+</tr>
+<tr class="even">
+<td>Network: WAN, router, VPN tunnels</td>
+<td>HA TP-Link integration, Gluetun health checks</td>
+<td>WAN down, tunnel down, kill switch engaged</td>
+</tr>
+<tr class="odd">
+<td>Devices: offline, batteries, Zigbee link quality</td>
+<td>Home Assistant</td>
+<td>Unavailable over 10 min, battery under 20%</td>
+</tr>
+<tr class="even">
+<td>Egress routes</td>
+<td>Scheduled public-IP and country check per route</td>
+<td>IP or country differs from expected</td>
+</tr>
+<tr class="odd">
+<td>Exposure</td>
+<td>Monthly external port scan of the home IP</td>
+<td>Any open port</td>
+</tr>
+<tr class="even">
+<td>Logins and spending</td>
+<td>Broker audit log, card issuer alerts</td>
+<td>A login request outside a job, repeated denials, any card
+charge</td>
+</tr>
+<tr class="odd">
+<td>Agent code changes</td>
+<td>Deploy health checks</td>
+<td>A failed check or a rollback</td>
+</tr>
+<tr class="even">
+<td>Voice quality</td>
+<td>Pipeline metrics: wake count, latency per stage</td>
+<td>p95 above the acceptance targets</td>
+</tr>
+<tr class="odd">
+<td>AI and cloud spend, errors</td>
+<td>Anthropic usage data, cloud VM billing (Phase 1), agent runtime
+metrics</td>
+<td>Daily spend over threshold, error spike</td>
+</tr>
+</tbody>
+</table>
+<p>Alerts arrive as app push notifications, with Telegram as the second
+channel.</p>
+<h3 id="observability">Observability</h3>
+<ul>
+<li>Logs: every service ships logs to Loki (or plain files collected by
+Vector), kept 30 days; passwords and codes are never logged.</li>
+<li>Traces: the agent runtime emits OpenTelemetry traces, one per
+request, covering speech-to-text, model calls, tool calls and the Home
+Assistant action; Langfuse (open source) stores them, on the cloud VM in
+Phase 1 and the Studio from Phase 2.</li>
+<li>Agent audit log: every tool call, message, approval, login release
+and takeover, searchable from the app.</li>
+<li>Dashboards: Grafana boards for house, voice, agents and cost, also
+reachable from the app.</li>
+</ul>
+<h3 id="high-availability-and-recovery">High availability and
+recovery</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Failure</th>
+<th>Effect</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mac Studio down (Phase 2)</td>
+<td>Voice server and agents stop</td>
+<td>HA automations, app tiles and wall switches keep working; voice
+devices fall back to Assist on the mini</td>
+</tr>
+<tr class="even">
+<td>Cloud workspace VM down (Phase 1)</td>
+<td>Agents stop</td>
+<td>The house is unaffected; jobs queue; rebuild the VM from its
+image</td>
+</tr>
+<tr class="odd">
+<td>Internet down</td>
+<td>Cloud Claude, Nest, Dreame and VPN routes unavailable</td>
+<td>Local devices keep working, plus the local model from Phase 2; agent
+jobs queue and resume</td>
+</tr>
+<tr class="even">
+<td>Anthropic API outage</td>
+<td>Cloud brain unavailable</td>
+<td>Simple commands still run through HA's local intents; from Phase 2
+the local model takes over; non-urgent jobs queue</td>
+</tr>
+<tr class="odd">
+<td>Mac mini down</td>
+<td>House control, vault and routes stop</td>
+<td>UPS, automatic restart and login, services at boot; watchdog alerts;
+HA backup restorable onto the Studio as a temporary host</td>
+</tr>
+<tr class="even">
+<td>Power cut</td>
+<td>Everything off</td>
+<td>UPS on the mini, router and Zigbee stick; the Studio shuts down
+first; the mini restarts by itself, and the Studio waits for your
+FileVault unlock and alerts you</td>
+</tr>
+<tr class="odd">
+<td>Server broken into</td>
+<td>Attacker on a Mac</td>
+<td>It holds no personal accounts, vault key or approval key; erase and
+rebuild from git and backups, and rotate any released logins</td>
+</tr>
+<tr class="even">
+<td>Agent stuck or misbehaving</td>
+<td>Wasted spend, wrong actions</td>
+<td>Job timeouts and token budgets, kill from the app, workspace
+snapshot rollback</td>
+</tr>
+<tr class="odd">
+<td>Bad agent code change</td>
+<td>Broken skill or automation</td>
+<td>Automatic rollback to the previous release</td>
+</tr>
+<tr class="even">
+<td>Data loss</td>
+<td>Config or history gone</td>
+<td>Nightly HA, vault and agent-database backups to a NAS or iCloud,
+configs in git, a monthly restore test</td>
+</tr>
+</tbody>
+</table>
+<p>Remaining single points of failure are the Mac mini (no hot spare),
+the router and the internet line; a 4G/5G backup line and a hot spare
+are Phase 3.</p>
+<h2 id="sources">Sources</h2>
+<p>Prices are in Canadian dollars. The Mac Studio uses Apple Canada list
+prices; other prices are converted from US dollars or pounds at October
+2, 2026 rates (1 USD = 1.4247 CAD, 1 GBP = 1.8867 CAD) and are
+approximate. Integration and project names without a link are from
+general knowledge and should be checked before buying or forking. Claude
+API prices are Anthropic list prices as of October 2026.</p>
+<ul>
+<li><a href="https://www.home-assistant.io/integrations/nest">Home
+Assistant: Google Nest integration</a></li>
+<li><a href="https://joinhomeshift.com/home-assistant-vacuum/">Best
+robot vacuums for Home Assistant (HomeShift)</a></li>
+<li><a
+href="https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-3.4c.htm?sku=31523">Waveshare
+ESP32-P4 3.4" round touch display</a></li>
+<li><a
+href="https://thepihut.com/products/respeaker-xmos-xvf3800-ai-powered-4-mic-array-for-clear-voice-even-in-noise">ReSpeaker
+XVF3800 4-mic array (The Pi Hut)</a></li>
+<li><a href="https://raspberrypi.com/products/touch-display-2">Raspberry
+Pi Touch Display 2</a></li>
+<li><a
+href="https://www.iphoneincanada.ca/2026/08/25/apple-unveils-new-mac-studio-with-m5-max-with-huge-price-hike-in-canada/">Mac
+Studio M5 Max and M5 Ultra Canadian prices (iPhone in Canada)</a></li>
+<li><a
+href="https://www.exchange-rates.org/exchange-rate-history/cad-usd-2026-10-02">USD
+to CAD rate, October 2, 2026</a> and <a
+href="https://www.exchange-rates.org/exchange-rate-history/cad-gbp-2026-10-02">GBP
+to CAD rate</a> (exchange-rates.org)</li>
+<li><a
+href="https://github.com/dani-garcia/vaultwarden">Vaultwarden</a></li>
+<li><a href="https://support.google.com/chrome/answer/95606">Export
+passwords from Chrome (Google help)</a></li>
+<li><a href="https://www.linkedin.com/legal/user-agreement">LinkedIn
+User Agreement</a></li>
+</ul>
+</body>
+</html>

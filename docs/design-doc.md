@@ -2,20 +2,22 @@
 
 Oct 16, 2026
 
-One Claude-based agent becomes the single decision maker for the home and for background agent work, replacing Alexa entirely. Home Assistant on the Mac mini executes device actions; custom voice devices and a custom mobile app are the only front ends. It is built in phases: the house and voice first on the Mac mini with cloud Claude, then agents with a rented cloud VM, then local AI and agents on the Mac Studio M5 Ultra. Security comes first throughout: nothing is reachable from the internet, and no agent can use a password, send or spend without your approval on your phone.
+One Claude-based agent becomes the single decision maker for the home and for background agent work, replacing Alexa entirely. Home Assistant on the Mac mini executes device actions; custom voice devices and a custom mobile app are the only front ends. It runs in one of two setups: Mac mini only (Phases 0 and 1, with cloud Claude and, for agents, a rented cloud VM), then Mac mini + Mac Studio (Phase 2 on, with local AI and agents on the Studio M5 Ultra). The mini-only setup is complete on its own if the Studio is never bought. Security comes first throughout: nothing is reachable from the internet, and no agent can use a password, send or spend without your approval on your phone.
 
 ## Glossary
 
 | Term | Meaning here |
 | --- | --- |
-| Phase | A delivery stage from the roadmap: 0 home and voice, 1 agents without the Studio, 2 Mac Studio, 3 leftovers |
+| Phase | A delivery stage from the roadmap: 0 home and voice, 1 agents without the Studio, 2 Mac Studio, 3 leftovers; Phases 0 and 1 use the Mac mini only setup, Phase 2 on the Mac mini + Mac Studio setup |
+| Mac mini only setup | The 8GB Mac mini runs the house, voice and the agent service with cloud models; agent workspaces run on a rented cloud VM. Phases 0 and 1, and the permanent setup if no Studio is bought |
+| Mac mini + Mac Studio setup | The mini keeps the house, vault and egress routes; the Studio runs voice, agents, workspaces and local models, and the cloud VM is retired. Phase 2 on |
 | Home Assistant (HA) | Open-source home hub on the Mac mini; holds every device and executes commands |
 | Agent | The single Claude-based decision maker that answers voice, app and chat requests |
 | Orchestrator | The part of the agent that plans work and starts subagents |
 | Subagent | A worker agent doing one job (research, an app task) in its own workspace |
 | Workspace | A container or VM where a subagent runs, with shell, browser and optional desktop |
 | Computer use | Claude controlling a desktop with screenshots, mouse clicks and keystrokes |
-| Egress route | The internet exit a workspace uses: home home IP, a NordVPN country, or the router VPN |
+| Egress route | The internet exit a workspace uses: home IP, a NordVPN country, or the router VPN |
 | Message bus | The channel subagents, the orchestrator and you use to talk; a policy decides who may talk to whom |
 | Vault | Vaultwarden, the self-hosted password manager that replaces Chrome's saved passwords |
 | Credential release | Sending one login from your phone to one agent job after you approve it |
@@ -47,20 +49,20 @@ Non-goals: Alexa or Echo devices in any role; the Windows PC as compute (it stay
 
 Targets are proposals to confirm. Each is grouped by the phase that must first meet it and is checked by a test or a dashboard in the last section.
 
-**Phase 0, home and voice:**
+**Phase 0, home and voice (Mac mini only setup):**
 
 - Every listed device (Nest, Dreame, Hue, Govee, SwitchBot, Samsung TV and soundbar, B&O, Plex, Apple TV, TP-Link routers, Windows PC power) is controllable from voice and the app, every Phase 0 feature in the Alexa parity table works by voice, and every Alexa routine you use today has been migrated.
 - Simple voice commands ("lights off") complete in under 1.5 s from end of speech; answers start speaking in under 3 s.
 - The wake word triggers on at least 95% of attempts at 3 m in a normal room, with under 1 false wake per day per device.
-- Lights, climate and automations keep working when the internet, or from Phase 2 the Mac Studio, is down.
+- Lights, climate and automations keep working when the internet, or in the Mac mini + Mac Studio setup the Mac Studio, is down.
 - After a power cut the Mac mini comes back and every service restarts with nobody touching it; neither Mac ever sleeps.
-- An external port scan of the home home IP finds no open ports; the app works away from home only over Tailscale.
+- An external port scan of the home IP finds no open ports; the app works away from home only over Tailscale.
 - No server Mac is signed into your Apple ID, iCloud, Messages, Chrome or personal email, so no 2FA code can be read on a server.
 - Monthly cloud AI spend has an alert threshold and a hard cap.
 
-**Phase 1, agents:**
+**Phase 1, agents (Mac mini only setup; still met after the move to the Studio):**
 
-- At least 3 subagents run at once, each with shell, browser and desktop (Phase 2: 5 or more, with 20+ possible).
+- At least 3 subagents run at once, each with shell, browser and desktop (Mac mini + Mac Studio setup: 5 or more, with 20+ possible).
 - Each subagent's public IP matches its assigned route at job start, and its traffic stops if the route drops.
 - A message between two agents not allowed by policy is blocked and logged.
 - From the app you can watch any agent's screen live, pause it, approve or deny a step, take over mouse and keyboard, and kill it.
@@ -74,28 +76,37 @@ Targets are proposals to confirm. Each is grouped by the phase that must first m
 
 ## Overall design
 
-The target design (Phase 2) splits the system across two always-on Macs so the house never depends on the AI side: the Mac mini runs Home Assistant, the vault and the network routes, and the Mac Studio runs the voice server, the agent runtime and local models. Every front end talks only to the agent; the agent controls devices only through Home Assistant's MCP server. Earlier phases run the same containers on the mini and a rented cloud VM, so moving to the Studio is a redeploy.
+The system runs in one of two setups, and in both the house never depends on the AI side. **Mac mini only** (Phases 0 and 1): the mini runs Home Assistant, voice, the agent service, the vault and the network routes with cloud models, plus a rented cloud VM for agent workspaces from Phase 1. **Mac mini + Mac Studio** (Phase 2 on, the target design drawn below): the mini keeps the house, the vault and the routes, and the Studio takes the voice server, the agent runtime, workspaces and local models. Every front end talks only to the agent, and the agent controls devices only through Home Assistant's MCP server. Both setups run the same containers, so moving to the Studio is a redeploy.
 
 &#91;embedded content: target design (Phase 2) · two hosts\]
 
 **Phases:** each phase is usable on its own; tasks for each are in the [roadmap](https://claude.ai/code/artifact/d7976fe8-3e15-48d9-9e10-f86c6c4a57c3), and sections below say where a phase differs.
 
-| Phase | What you get | Runs on |
+| Phase | What you get | Setup |
 | --- | --- | --- |
-| 0: Home and voice | Alexa retired with full everyday parity (timers, alarms, reminders, announcements, music, weather, news, stocks, lists); Home Assistant, voice devices, app and widgets; morning briefing; network, VPN and always-on Mac setup | Mac mini + cloud Claude |
-| 1: Agents, no Studio | 3+ subagents with shell, browser and desktop; egress routes; password vault with phone approval; approvals and take over from the app; agent code changes by pull request; full memory, heads-up alerts and delegation | Mac mini + cloud Claude + one rented cloud VM for workspaces |
-| 2: Mac Studio | Local models and voice server with interruptible replies; 5+ subagents (20+ possible) and up to 2 macOS VMs; screens that anticipate and routine suggestions; cloud VM retired; the Macs watch each other | Mac Studio + Mac mini |
-| 3: Leftovers | Vision, per-person voices, per-room presence, 4G/5G backup line, hot spare, Valetudo, app extras | Both |
+| 0: Home and voice | Alexa retired with full everyday parity (timers, alarms, reminders, announcements, music, weather, news, stocks, lists); Home Assistant, voice devices, app and widgets; morning briefing; network, VPN and always-on Mac setup | Mac mini only, with cloud Claude |
+| 1: Agents, no Studio | 3+ subagents with shell, browser and desktop; egress routes; password vault with phone approval; approvals and take over from the app; agent code changes by pull request; full memory, heads-up alerts and delegation | Mac mini only, with cloud Claude and one rented cloud VM for workspaces |
+| 2: Mac Studio | Local models and voice server with interruptible replies; 5+ subagents (20+ possible) and up to 2 macOS VMs; screens that anticipate and routine suggestions; cloud VM retired; the Macs watch each other | Mac mini + Mac Studio |
+| 3: Leftovers | Vision, per-person voices, per-room presence, 4G/5G backup line, hot spare, Valetudo, app extras | Mac mini + Mac Studio |
 
-**Hardware roles:**
+**What runs where in each setup:**
 
-| Machine | Phase 0 | Phase 1 | Phase 2 onward |
-| --- | --- | --- | --- |
-| Mac mini (8GB), always on, on a UPS | Home Assistant OS VM, Zigbee/Thread stick, Assist voice, Tailscale, backups, Uptime Kuma | Adds agent service, message bus, egress routes, vault and credential broker | House, egress routes, vault, broker, Assist fallback; agent service moves to the Studio |
-| Rented cloud VM (16 to 32GB) | Not used | Agent workspaces and Langfuse, all traffic routed through home | Retired |
-| Mac Studio M5 Ultra | Not used | Not used | Agent runtime, workspaces, macOS VMs, local models, voice server, app backend |
-| Plex server | Unchanged; used through its API | Same | Same |
-| Windows PC (RTX 5090) | Not compute; controlled device only (Wake on LAN, power) | Same | Same |
+| Part | Mac mini only (Phases 0 and 1) | Mac mini + Mac Studio (Phase 2 on) |
+| --- | --- | --- |
+| Home Assistant OS VM, Zigbee/Thread stick, Bluetooth proxies | Mac mini (8GB), always on, on a UPS | Mac mini |
+| Voice pipeline | Assist on the mini: cloud speech-to-text for open questions, local Speech-to-Phrase for fixed commands, Piper | Voice server on the Studio (local Whisper or Parakeet, LiveKit, interruptible replies); Assist on the mini as fallback |
+| Agent service: orchestrator, memory, harness, app backend | Mac mini, calling cloud models | Mac Studio |
+| AI models | Cloud only; offline, only Home Assistant's local intents answer | Cloud plus a local 100B to 200B model; private and offline requests use it |
+| Agent workspaces | None in Phase 0; in Phase 1 a rented cloud VM (16 to 32GB): 3 Linux desktops, all traffic routed through home | Studio: 5+ Linux desktops (20+ possible) and up to 2 macOS VMs; cloud VM retired |
+| Message bus (NATS) | Mac mini (Phase 1) | Mac Studio |
+| Traces (Langfuse) | Cloud VM (Phase 1) | Mac Studio |
+| Vault, credential broker, egress routes | Mac mini (Phase 1) | Mac mini |
+| Tailscale subnet router, backups | Mac mini | Mac mini |
+| Monitoring (Uptime Kuma, host health) | Mac mini watches everything | Mini and Studio watch each other |
+| Plex server | Unchanged; used through its API | Same |
+| Windows PC (RTX 5090) | Not compute; controlled device only (Wake on LAN, power) | Same |
+
+The mini-only setup is also the long-term fallback: without a Studio, the cloud VM stays, workspaces stay Linux-only, and private or offline requests have no local model.
 
 **Key decisions:**
 
@@ -149,9 +160,9 @@ The devices are thin clients: they detect the wake word locally, stream audio to
 | Software | Linux kiosk with the app UI + voice client | ESPHome or ESP-IDF with LVGL | Forked Voice PE ESPHome firmware |
 | Parts (approx.) | CA$330 to 430 | CA$100 to 130 | CA$130 to 185 |
 
-**Pipeline in Phase 0 and 1:** devices are Home Assistant Assist satellites on the mini, with cloud speech-to-text for open questions, local Speech-to-Phrase for fixed commands and Piper for speech.
+**Pipeline, Mac mini only setup (Phases 0 and 1):** devices are Home Assistant Assist satellites on the mini, with cloud speech-to-text for open questions, local Speech-to-Phrase for fixed commands and Piper for speech.
 
-**Pipeline from Phase 2:** on-device wake word (microWakeWord or openWakeWord, custom name) → audio over WebRTC (LiveKit) to the voice server on the Studio → local STT (Whisper or Parakeet) → agent → streaming TTS (Piper locally, or a cloud voice) → screen cards over WebSocket. Assist on the mini stays as the fallback. In both, simple device commands are matched by Home Assistant's intent engine first, so they skip the LLM.
+**Pipeline, Mac mini + Mac Studio setup (Phase 2 on):** on-device wake word (microWakeWord or openWakeWord, custom name) → audio over WebRTC (LiveKit) to the voice server on the Studio → local STT (Whisper or Parakeet) → agent → streaming TTS (Piper locally, or a cloud voice) → screen cards over WebSocket. Assist on the mini stays as the fallback. In both, simple device commands are matched by Home Assistant's intent engine first, so they skip the LLM.
 
 **Enclosures:** 3D-printed with fabric fronts; speaker quality is the hardest part to match an Echo.
 
@@ -223,7 +234,7 @@ The agent service doubles as a local harness (E1.12) with the features of Muse, 
 | Open-weight LLM (100B to 200B class, 4-bit) | Mac Studio | Electricity only | Private requests, offline fallback | Phase 2 |
 | Whisper or Parakeet, Piper | Mac Studio | Electricity only | Speech-to-text, text-to-speech | Phase 2 |
 
-Cloud prices are Anthropic list prices, billed in US dollars; consumer subscriptions do not cover API use. 256GB of Studio memory is the suggested size (one large local model plus 20+ workspaces).
+Cloud prices are Anthropic list prices, billed in US dollars; consumer subscriptions do not cover API use. 256GB of Studio memory is the suggested size (one large local model plus 20+ workspaces). In the Mac mini only setup only the cloud rows apply: the 8GB mini cannot hold a useful local model, so offline answers come only from Home Assistant's local intents.
 
 ### Multi-agent runtime
 
@@ -241,7 +252,7 @@ Each subagent runs in its own workspace with a shell, a browser and a desktop, e
 | Control plane | Live screens, approvals, pause, take over, kill | App Agents tab; screens via noVNC, WebRTC in Phase 2 |
 | Tools | Home Assistant MCP server, web search, calendar, Gmail, file storage, Plex API, notifications | MCP servers and APIs |
 
-**Placement:** in Phase 1 the orchestrator, message bus, broker and routes run on the mini, and workspaces plus Langfuse run on the cloud VM; in Phase 2 everything except the routes, vault and broker moves to the Studio with the same images.
+**Placement:** in the Mac mini only setup (Phase 1) the orchestrator, message bus, broker and routes run on the mini, and workspaces plus Langfuse run on the cloud VM; in the Mac mini + Mac Studio setup everything except the routes, vault and broker moves to the Studio with the same images.
 
 **Tool order for a task:** APIs and MCP first, then browser automation (Playwright or browser-use) for websites, and computer use (screenshots, mouse, keyboard) only for apps with no other interface.
 
@@ -257,7 +268,7 @@ writer,cli-only,none,orchestrator;expenses;jobs;research-de,none,nothing
 
 **Human intervention:** an approval request pauses the agent and sends a push notification with Approve and Deny. Approvals are signed by a key in your phone's Secure Enclave after Face ID and checked by the runtime, so nothing on a server can approve on your behalf. Take over gives you mouse and keyboard in the live view; the agent resumes with a note of what you did. Typed messages join the agent's conversation; Kill destroys the workspace and keeps its log.
 
-**Capacity (approximate):** Phase 1 runs 3 desktop workspaces at once on a 16 to 32GB cloud VM. From Phase 2 a Linux desktop workspace uses 1 to 2GB, so a 256GB Studio runs 20+ alongside a large local model; macOS allows at most 2 macOS VMs at a time per Mac.
+**Capacity (approximate):** the Mac mini only setup runs 3 Linux desktop workspaces at once on a 16 to 32GB cloud VM, with no macOS VMs. In the Mac mini + Mac Studio setup a Linux desktop workspace uses 1 to 2GB, so a 256GB Studio runs 20+ alongside a large local model; macOS allows at most 2 macOS VMs at a time per Mac.
 
 ### Passwords and credentials
 
@@ -301,7 +312,7 @@ These jobs show the pieces working together; each uses a logged-in browser, rele
 | --- | --- | --- | --- |
 | transit reimbursement | Logs into the card site, downloads the month's transactions, picks out transit pass charges, builds an Excel sheet and summary, drafts the email in Gmail through the Gmail API | home | The login, then sending |
 | LinkedIn job applications | Searches roles matching saved criteria, tailors the résumé and cover letter, fills each application up to Submit | home | The login, then each submission |
-| Spreadsheets | Data work on .xlsx files with Python in a CLI workspace; Excel itself in a macOS VM (Phase 2) for macros, pivots and charts; files from OneDrive, Google Drive or iCloud through their APIs | none | Overwriting an original (a copy is saved first) |
+| Spreadsheets | Data work on .xlsx files with Python in a CLI workspace; Excel itself in a macOS VM (Mac mini + Mac Studio setup only) for macros, pivots and charts; files from OneDrive, Google Drive or iCloud through their APIs | none | Overwriting an original (a copy is saved first) |
 | Fix or extend itself | Writes a new skill or automation as described in Agent code changes | none | The merge and deploy |
 | Monthly paperwork | Downloads bills and receipts from utility, phone and card sites, files them, and flags unusual charges | home | Each new login |
 | Bookings and price watches | Compares flights, hotels or products from several countries, then books a restaurant or appointment | nord-\<country> to compare, home to book | Any booking or purchase |
@@ -310,7 +321,7 @@ LinkedIn's user agreement forbids automated tools on the site, so applications s
 
 ### Always-on Mac setup
 
-Both Macs run as headless servers: they never sleep, restart by themselves after a power cut, start every service at boot, and can be reached only over Tailscale. The mini is set up in Phase 0, the Studio in Phase 2.
+Both Macs run as headless servers: they never sleep, restart by themselves after a power cut, start every service at boot, and can be reached only over Tailscale. The mini is set up in Phase 0 and is the only server in the Mac mini only setup; the Studio joins in Phase 2 for the Mac mini + Mac Studio setup.
 
 **Before anything else:** a Mac that was previously a personal machine starts clean before it becomes a server. Erase it (Erase All Content and Settings), reinstall macOS, restore no apps or settings from old backups, and rotate every password ever used on it.
 
@@ -360,11 +371,11 @@ The network is set up once in Phase 0: the TP-Link Wi-Fi 7 mesh splits the home 
 8. Home Assistant TP-Link or Deco integration for presence, WAN status and reboot; the router configuration is backed up with the HA backups.
 9. A 4G/5G backup line comes later (Phase 3).
 
-**Egress routes (Phase 1 onward):** each route is a proxy on the mini; the workspace manager attaches one per workspace, and the job checks its public IP and country before starting. In Phase 1 the cloud VM's workspaces send all traffic over Tailscale to these routes and are blocked from the internet otherwise, so a dropped route fails closed; in Phase 2 the Studio's workspaces reach them over the LAN.
+**Egress routes (Phase 1 onward):** each route is a proxy on the mini; the workspace manager attaches one per workspace, and the job checks its public IP and country before starting. In the Mac mini only setup the cloud VM's workspaces send all traffic over Tailscale to these routes and are blocked from the internet otherwise, so a dropped route fails closed; in the Mac mini + Mac Studio setup the Studio's workspaces reach them over the LAN.
 
 | Route | How | Use for |
 | --- | --- | --- |
-| home | Home home IP through a plain proxy | Logged-in accounts, lowest bot-check friction |
+| home | Home IP through a plain proxy | Logged-in accounts, lowest bot-check friction |
 | nord-\<country> | Gluetun container per NordVPN location | Location-specific results and prices |
 | router-vpn | TP-Link VPN client (NordLynx) on the Lab network, with a kill switch | A dedicated workspace that must always exit from one country |
 
@@ -411,11 +422,16 @@ All amounts are in Canadian dollars and approximate; Sources explains the conver
 | Rented cloud VM, 16 to 32GB | 1 only |  | CA$40 to 150 depending on provider (estimate) |
 | Mac Studio M5 Ultra | 2 | From CA$7,799 (M5 Max from CA$3,499); 256GB memory costs more, so confirm Apple Canada's configured price | Electricity |
 
-NordVPN, the TP-Link routers and the Mac mini are already owned.
+NordVPN, the TP-Link routers and the Mac mini are already owned. Totals per setup, from the rows above (monthly includes the developer fee spread over 12 months):
+
+| Setup | One-time | Monthly |
+| --- | --- | --- |
+| Mac mini only | CA$1,390 to 2,010 | CA$26 to 83 in Phase 0; CA$66 to 233 once the cloud VM starts in Phase 1 |
+| Mac mini + Mac Studio | From about CA$9,190 (adds the Studio) | CA$26 to 83 plus electricity; the cloud VM is retired |
 
 ## Monitoring, observability and high availability
 
-The house must keep working when the internet or, from Phase 2, the Mac Studio is down, and every other failure must alert you and be recoverable from backups. In Phases 0 and 1 the mini watches everything; Phase 2 adds a watcher on the Studio so the two Macs watch each other.
+The house must keep working when the internet or, from Phase 2, the Mac Studio is down, and every other failure must alert you and be recoverable from backups. In the Mac mini only setup the mini watches everything; the Mac mini + Mac Studio setup adds a watcher on the Studio so the two Macs watch each other.
 
 ### Monitoring and alerts
 
@@ -446,8 +462,8 @@ Alerts arrive as app push notifications, with Telegram as the second channel.
 
 | Failure | Effect | Mitigation |
 | --- | --- | --- |
-| Mac Studio down (Phase 2) | Voice server and agents stop | HA automations, app tiles and wall switches keep working; voice devices fall back to Assist on the mini |
-| Cloud workspace VM down (Phase 1) | Agents stop | The house is unaffected; jobs queue; rebuild the VM from its image |
+| Mac Studio down (Mac mini + Mac Studio setup) | Voice server and agents stop | HA automations, app tiles and wall switches keep working; voice devices fall back to Assist on the mini |
+| Cloud workspace VM down (Mac mini only setup) | Agents stop | The house is unaffected; jobs queue; rebuild the VM from its image |
 | Internet down | Cloud Claude, Nest, Dreame and VPN routes unavailable | Local devices keep working, plus the local model from Phase 2; agent jobs queue and resume |
 | Anthropic API outage | Cloud brain unavailable | Simple commands still run through HA's local intents; from Phase 2 the local model takes over; non-urgent jobs queue |
 | Mac mini down | House control, vault and routes stop | UPS, automatic restart and login, services at boot; watchdog alerts; HA backup restorable onto the Studio as a temporary host |

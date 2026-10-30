@@ -171,12 +171,13 @@ Agent Design List</h1>
 <p>One Claude-based agent becomes the single decision maker for the home
 and for background agent work, replacing Alexa entirely. Home Assistant
 on the Mac mini executes device actions; custom voice devices and a
-custom mobile app are the only front ends. It is built in phases: the
-house and voice first on the Mac mini with cloud Claude, then agents
-with a rented cloud VM, then local AI and agents on the Mac Studio M5
-Ultra. Security comes first throughout: nothing is reachable from the
-internet, and no agent can use a password, send or spend without your
-approval on your phone.</p>
+custom mobile app are the only front ends. It runs in one of two setups:
+Mac mini only (Phases 0 and 1, with cloud Claude and, for agents, a
+rented cloud VM), then Mac mini + Mac Studio (Phase 2 on, with local AI
+and agents on the Studio M5 Ultra). The mini-only setup is complete on
+its own if the Studio is never bought. Security comes first throughout:
+nothing is reachable from the internet, and no agent can use a password,
+send or spend without your approval on your phone.</p>
 <h2 id="glossary">Glossary</h2>
 <table>
 <thead>
@@ -189,7 +190,20 @@ approval on your phone.</p>
 <tr class="odd">
 <td>Phase</td>
 <td>A delivery stage from the roadmap: 0 home and voice, 1 agents
-without the Studio, 2 Mac Studio, 3 leftovers</td>
+without the Studio, 2 Mac Studio, 3 leftovers; Phases 0 and 1 use the
+Mac mini only setup, Phase 2 on the Mac mini + Mac Studio setup</td>
+</tr>
+<tr class="even">
+<td>Mac mini only setup</td>
+<td>The 8GB Mac mini runs the house, voice and the agent service with
+cloud models; agent workspaces run on a rented cloud VM. Phases 0 and 1,
+and the permanent setup if no Studio is bought</td>
+</tr>
+<tr class="odd">
+<td>Mac mini + Mac Studio setup</td>
+<td>The mini keeps the house, vault and egress routes; the Studio runs
+voice, agents, workspaces and local models, and the cloud VM is retired.
+Phase 2 on</td>
 </tr>
 <tr class="even">
 <td>Home Assistant (HA)</td>
@@ -222,8 +236,8 @@ keystrokes</td>
 </tr>
 <tr class="even">
 <td>Egress route</td>
-<td>The internet exit a workspace uses: home home IP, a NordVPN country,
-or the router VPN</td>
+<td>The internet exit a workspace uses: home IP, a NordVPN country, or
+the router VPN</td>
 </tr>
 <tr class="odd">
 <td>Message bus</td>
@@ -333,7 +347,7 @@ terms.</p>
 <p>Targets are proposals to confirm. Each is grouped by the phase that
 must first meet it and is checked by a test or a dashboard in the last
 section.</p>
-<p><strong>Phase 0, home and voice:</strong></p>
+<p><strong>Phase 0, home and voice (Mac mini only setup):</strong></p>
 <ul>
 <li>Every listed device (Nest, Dreame, Hue, Govee, SwitchBot, Samsung TV
 and soundbar, B&amp;O, Plex, Apple TV, TP-Link routers, Windows PC
@@ -345,19 +359,21 @@ end of speech; answers start speaking in under 3 s.</li>
 <li>The wake word triggers on at least 95% of attempts at 3 m in a
 normal room, with under 1 false wake per day per device.</li>
 <li>Lights, climate and automations keep working when the internet, or
-from Phase 2 the Mac Studio, is down.</li>
+in the Mac mini + Mac Studio setup the Mac Studio, is down.</li>
 <li>After a power cut the Mac mini comes back and every service restarts
 with nobody touching it; neither Mac ever sleeps.</li>
-<li>An external port scan of the home home IP finds no open ports; the
-app works away from home only over Tailscale.</li>
+<li>An external port scan of the home IP finds no open ports; the app
+works away from home only over Tailscale.</li>
 <li>No server Mac is signed into your Apple ID, iCloud, Messages, Chrome
 or personal email, so no 2FA code can be read on a server.</li>
 <li>Monthly cloud AI spend has an alert threshold and a hard cap.</li>
 </ul>
-<p><strong>Phase 1, agents:</strong></p>
+<p><strong>Phase 1, agents (Mac mini only setup; still met after the
+move to the Studio):</strong></p>
 <ul>
 <li>At least 3 subagents run at once, each with shell, browser and
-desktop (Phase 2: 5 or more, with 20+ possible).</li>
+desktop (Mac mini + Mac Studio setup: 5 or more, with 20+
+possible).</li>
 <li>Each subagent's public IP matches its assigned route at job start,
 and its traffic stops if the route drops.</li>
 <li>A message between two agents not allowed by policy is blocked and
@@ -382,13 +398,17 @@ hours.</li>
 days.</li>
 </ul>
 <h2 id="overall-design">Overall design</h2>
-<p>The target design (Phase 2) splits the system across two always-on
-Macs so the house never depends on the AI side: the Mac mini runs Home
-Assistant, the vault and the network routes, and the Mac Studio runs the
-voice server, the agent runtime and local models. Every front end talks
-only to the agent; the agent controls devices only through Home
-Assistant's MCP server. Earlier phases run the same containers on the
-mini and a rented cloud VM, so moving to the Studio is a redeploy.</p>
+<p>The system runs in one of two setups, and in both the house never
+depends on the AI side. <strong>Mac mini only</strong> (Phases 0 and 1):
+the mini runs Home Assistant, voice, the agent service, the vault and
+the network routes with cloud models, plus a rented cloud VM for agent
+workspaces from Phase 1. <strong>Mac mini + Mac Studio</strong> (Phase 2
+on, the target design drawn below): the mini keeps the house, the vault
+and the routes, and the Studio takes the voice server, the agent
+runtime, workspaces and local models. Every front end talks only to the
+agent, and the agent controls devices only through Home Assistant's MCP
+server. Both setups run the same containers, so moving to the Studio is
+a redeploy.</p>
 <p>[embedded content: target design (Phase 2) · two hosts]</p>
 <p><strong>Phases:</strong> each phase is usable on its own; tasks for
 each are in the <a
@@ -399,7 +419,7 @@ and sections below say where a phase differs.</p>
 <tr class="header">
 <th>Phase</th>
 <th>What you get</th>
-<th>Runs on</th>
+<th>Setup</th>
 </tr>
 </thead>
 <tbody>
@@ -409,7 +429,7 @@ and sections below say where a phase differs.</p>
 announcements, music, weather, news, stocks, lists); Home Assistant,
 voice devices, app and widgets; morning briefing; network, VPN and
 always-on Mac setup</td>
-<td>Mac mini + cloud Claude</td>
+<td>Mac mini only, with cloud Claude</td>
 </tr>
 <tr class="even">
 <td>1: Agents, no Studio</td>
@@ -417,7 +437,8 @@ always-on Mac setup</td>
 password vault with phone approval; approvals and take over from the
 app; agent code changes by pull request; full memory, heads-up alerts
 and delegation</td>
-<td>Mac mini + cloud Claude + one rented cloud VM for workspaces</td>
+<td>Mac mini only, with cloud Claude and one rented cloud VM for
+workspaces</td>
 </tr>
 <tr class="odd">
 <td>2: Mac Studio</td>
@@ -425,63 +446,96 @@ and delegation</td>
 subagents (20+ possible) and up to 2 macOS VMs; screens that anticipate
 and routine suggestions; cloud VM retired; the Macs watch each
 other</td>
-<td>Mac Studio + Mac mini</td>
+<td>Mac mini + Mac Studio</td>
 </tr>
 <tr class="even">
 <td>3: Leftovers</td>
 <td>Vision, per-person voices, per-room presence, 4G/5G backup line, hot
 spare, Valetudo, app extras</td>
-<td>Both</td>
+<td>Mac mini + Mac Studio</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Hardware roles:</strong></p>
+<p><strong>What runs where in each setup:</strong></p>
 <table>
 <thead>
 <tr class="header">
-<th>Machine</th>
-<th>Phase 0</th>
-<th>Phase 1</th>
-<th>Phase 2 onward</th>
+<th>Part</th>
+<th>Mac mini only (Phases 0 and 1)</th>
+<th>Mac mini + Mac Studio (Phase 2 on)</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
+<td>Home Assistant OS VM, Zigbee/Thread stick, Bluetooth proxies</td>
 <td>Mac mini (8GB), always on, on a UPS</td>
-<td>Home Assistant OS VM, Zigbee/Thread stick, Assist voice, Tailscale,
-backups, Uptime Kuma</td>
-<td>Adds agent service, message bus, egress routes, vault and credential
-broker</td>
-<td>House, egress routes, vault, broker, Assist fallback; agent service
-moves to the Studio</td>
+<td>Mac mini</td>
 </tr>
 <tr class="even">
-<td>Rented cloud VM (16 to 32GB)</td>
-<td>Not used</td>
-<td>Agent workspaces and Langfuse, all traffic routed through home</td>
-<td>Retired</td>
+<td>Voice pipeline</td>
+<td>Assist on the mini: cloud speech-to-text for open questions, local
+Speech-to-Phrase for fixed commands, Piper</td>
+<td>Voice server on the Studio (local Whisper or Parakeet, LiveKit,
+interruptible replies); Assist on the mini as fallback</td>
 </tr>
 <tr class="odd">
-<td>Mac Studio M5 Ultra</td>
-<td>Not used</td>
-<td>Not used</td>
-<td>Agent runtime, workspaces, macOS VMs, local models, voice server,
-app backend</td>
+<td>Agent service: orchestrator, memory, harness, app backend</td>
+<td>Mac mini, calling cloud models</td>
+<td>Mac Studio</td>
 </tr>
 <tr class="even">
+<td>AI models</td>
+<td>Cloud only; offline, only Home Assistant's local intents answer</td>
+<td>Cloud plus a local 100B to 200B model; private and offline requests
+use it</td>
+</tr>
+<tr class="odd">
+<td>Agent workspaces</td>
+<td>None in Phase 0; in Phase 1 a rented cloud VM (16 to 32GB): 3 Linux
+desktops, all traffic routed through home</td>
+<td>Studio: 5+ Linux desktops (20+ possible) and up to 2 macOS VMs;
+cloud VM retired</td>
+</tr>
+<tr class="even">
+<td>Message bus (NATS)</td>
+<td>Mac mini (Phase 1)</td>
+<td>Mac Studio</td>
+</tr>
+<tr class="odd">
+<td>Traces (Langfuse)</td>
+<td>Cloud VM (Phase 1)</td>
+<td>Mac Studio</td>
+</tr>
+<tr class="even">
+<td>Vault, credential broker, egress routes</td>
+<td>Mac mini (Phase 1)</td>
+<td>Mac mini</td>
+</tr>
+<tr class="odd">
+<td>Tailscale subnet router, backups</td>
+<td>Mac mini</td>
+<td>Mac mini</td>
+</tr>
+<tr class="even">
+<td>Monitoring (Uptime Kuma, host health)</td>
+<td>Mac mini watches everything</td>
+<td>Mini and Studio watch each other</td>
+</tr>
+<tr class="odd">
 <td>Plex server</td>
 <td>Unchanged; used through its API</td>
 <td>Same</td>
-<td>Same</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Windows PC (RTX 5090)</td>
 <td>Not compute; controlled device only (Wake on LAN, power)</td>
-<td>Same</td>
 <td>Same</td>
 </tr>
 </tbody>
 </table>
+<p>The mini-only setup is also the long-term fallback: without a Studio,
+the cloud VM stays, workspaces stay Linux-only, and private or offline
+requests have no local model.</p>
 <p><strong>Key decisions:</strong></p>
 <table>
 <thead>
@@ -712,17 +766,17 @@ CA$85</a>)</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Pipeline in Phase 0 and 1:</strong> devices are Home
-Assistant Assist satellites on the mini, with cloud speech-to-text for
-open questions, local Speech-to-Phrase for fixed commands and Piper for
-speech.</p>
-<p><strong>Pipeline from Phase 2:</strong> on-device wake word
-(microWakeWord or openWakeWord, custom name) → audio over WebRTC
-(LiveKit) to the voice server on the Studio → local STT (Whisper or
-Parakeet) → agent → streaming TTS (Piper locally, or a cloud voice) →
-screen cards over WebSocket. Assist on the mini stays as the fallback.
-In both, simple device commands are matched by Home Assistant's intent
-engine first, so they skip the LLM.</p>
+<p><strong>Pipeline, Mac mini only setup (Phases 0 and 1):</strong>
+devices are Home Assistant Assist satellites on the mini, with cloud
+speech-to-text for open questions, local Speech-to-Phrase for fixed
+commands and Piper for speech.</p>
+<p><strong>Pipeline, Mac mini + Mac Studio setup (Phase 2 on):</strong>
+on-device wake word (microWakeWord or openWakeWord, custom name) → audio
+over WebRTC (LiveKit) to the voice server on the Studio → local STT
+(Whisper or Parakeet) → agent → streaming TTS (Piper locally, or a cloud
+voice) → screen cards over WebSocket. Assist on the mini stays as the
+fallback. In both, simple device commands are matched by Home
+Assistant's intent engine first, so they skip the LLM.</p>
 <p><strong>Enclosures:</strong> 3D-printed with fabric fronts; speaker
 quality is the hardest part to match an Echo.</p>
 <h3 id="mobile-app-and-chat">Mobile app and chat</h3>
@@ -1046,7 +1100,10 @@ class="math inline">0.10/0.50(<em>a</em><em>b</em><em>o</em><em>u</em><em>t</em>
 </table>
 <p>Cloud prices are Anthropic list prices, billed in US dollars;
 consumer subscriptions do not cover API use. 256GB of Studio memory is
-the suggested size (one large local model plus 20+ workspaces).</p>
+the suggested size (one large local model plus 20+ workspaces). In the
+Mac mini only setup only the cloud rows apply: the 8GB mini cannot hold
+a useful local model, so offline answers come only from Home Assistant's
+local intents.</p>
 <h3 id="multi-agent-runtime">Multi-agent runtime</h3>
 <p>Each subagent runs in its own workspace with a shell, a browser and a
 desktop, exits through an assigned route, talks only to allowed peers,
@@ -1106,10 +1163,11 @@ storage, Plex API, notifications</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Placement:</strong> in Phase 1 the orchestrator, message bus,
-broker and routes run on the mini, and workspaces plus Langfuse run on
-the cloud VM; in Phase 2 everything except the routes, vault and broker
-moves to the Studio with the same images.</p>
+<p><strong>Placement:</strong> in the Mac mini only setup (Phase 1) the
+orchestrator, message bus, broker and routes run on the mini, and
+workspaces plus Langfuse run on the cloud VM; in the Mac mini + Mac
+Studio setup everything except the routes, vault and broker moves to the
+Studio with the same images.</p>
 <p><strong>Tool order for a task:</strong> APIs and MCP first, then
 browser automation (Playwright or browser-use) for websites, and
 computer use (screenshots, mouse, keyboard) only for apps with no other
@@ -1127,11 +1185,11 @@ by the runtime, so nothing on a server can approve on your behalf. Take
 over gives you mouse and keyboard in the live view; the agent resumes
 with a note of what you did. Typed messages join the agent's
 conversation; Kill destroys the workspace and keeps its log.</p>
-<p><strong>Capacity (approximate):</strong> Phase 1 runs 3 desktop
-workspaces at once on a 16 to 32GB cloud VM. From Phase 2 a Linux
-desktop workspace uses 1 to 2GB, so a 256GB Studio runs 20+ alongside a
-large local model; macOS allows at most 2 macOS VMs at a time per
-Mac.</p>
+<p><strong>Capacity (approximate):</strong> the Mac mini only setup runs
+3 Linux desktop workspaces at once on a 16 to 32GB cloud VM, with no
+macOS VMs. In the Mac mini + Mac Studio setup a Linux desktop workspace
+uses 1 to 2GB, so a 256GB Studio runs 20+ alongside a large local model;
+macOS allows at most 2 macOS VMs at a time per Mac.</p>
 <h3 id="passwords-and-credentials">Passwords and credentials</h3>
 <p>Your passwords move from Chrome into a self-hosted vault. Agents
 never hold the vault: they get one login at a time, released from your
@@ -1225,8 +1283,9 @@ letter, fills each application up to Submit</td>
 <tr class="odd">
 <td>Spreadsheets</td>
 <td>Data work on .xlsx files with Python in a CLI workspace; Excel
-itself in a macOS VM (Phase 2) for macros, pivots and charts; files from
-OneDrive, Google Drive or iCloud through their APIs</td>
+itself in a macOS VM (Mac mini + Mac Studio setup only) for macros,
+pivots and charts; files from OneDrive, Google Drive or iCloud through
+their APIs</td>
 <td>none</td>
 <td>Overwriting an original (a copy is saved first)</td>
 </tr>
@@ -1259,8 +1318,9 @@ risk you accept.</p>
 <h3 id="always-on-mac-setup">Always-on Mac setup</h3>
 <p>Both Macs run as headless servers: they never sleep, restart by
 themselves after a power cut, start every service at boot, and can be
-reached only over Tailscale. The mini is set up in Phase 0, the Studio
-in Phase 2.</p>
+reached only over Tailscale. The mini is set up in Phase 0 and is the
+only server in the Mac mini only setup; the Studio joins in Phase 2 for
+the Mac mini + Mac Studio setup.</p>
 <p><strong>Before anything else:</strong> a Mac that was previously a
 personal machine starts clean before it becomes a server. Erase it
 (Erase All Content and Settings), reinstall macOS, restore no apps or
@@ -1400,10 +1460,11 @@ backups.</li>
 </ol>
 <p><strong>Egress routes (Phase 1 onward):</strong> each route is a
 proxy on the mini; the workspace manager attaches one per workspace, and
-the job checks its public IP and country before starting. In Phase 1 the
-cloud VM's workspaces send all traffic over Tailscale to these routes
-and are blocked from the internet otherwise, so a dropped route fails
-closed; in Phase 2 the Studio's workspaces reach them over the LAN.</p>
+the job checks its public IP and country before starting. In the Mac
+mini only setup the cloud VM's workspaces send all traffic over
+Tailscale to these routes and are blocked from the internet otherwise,
+so a dropped route fails closed; in the Mac mini + Mac Studio setup the
+Studio's workspaces reach them over the LAN.</p>
 <table>
 <thead>
 <tr class="header">
@@ -1415,7 +1476,7 @@ closed; in Phase 2 the Studio's workspaces reach them over the LAN.</p>
 <tbody>
 <tr class="odd">
 <td>home</td>
-<td>Home home IP through a plain proxy</td>
+<td>Home IP through a plain proxy</td>
 <td>Logged-in accounts, lowest bot-check friction</td>
 </tr>
 <tr class="even">
@@ -1575,14 +1636,39 @@ class="math inline">7, 799(<em>M</em>5<em>M</em><em>a</em><em>x</em><em>f</em>
 </tr>
 </tbody>
 </table>
-<p>NordVPN, the TP-Link routers and the Mac mini are already owned.</p>
+<p>NordVPN, the TP-Link routers and the Mac mini are already owned.
+Totals per setup, from the rows above (monthly includes the developer
+fee spread over 12 months):</p>
+<table>
+<thead>
+<tr class="header">
+<th>Setup</th>
+<th>One-time</th>
+<th>Monthly</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mac mini only</td>
+<td>CA$1,390 to 2,010</td>
+<td>CA<span
+class="math inline">26<em>t</em><em>o</em>83<em>i</em><em>n</em><em>P</em><em>h</em><em>a</em><em>s</em><em>e</em>0; <em>C</em><em>A</em></span>66
+to 233 once the cloud VM starts in Phase 1</td>
+</tr>
+<tr class="even">
+<td>Mac mini + Mac Studio</td>
+<td>From about CA$9,190 (adds the Studio)</td>
+<td>CA$26 to 83 plus electricity; the cloud VM is retired</td>
+</tr>
+</tbody>
+</table>
 <h2 id="monitoring-observability-and-high-availability">Monitoring,
 observability and high availability</h2>
 <p>The house must keep working when the internet or, from Phase 2, the
 Mac Studio is down, and every other failure must alert you and be
-recoverable from backups. In Phases 0 and 1 the mini watches everything;
-Phase 2 adds a watcher on the Studio so the two Macs watch each
-other.</p>
+recoverable from backups. In the Mac mini only setup the mini watches
+everything; the Mac mini + Mac Studio setup adds a watcher on the Studio
+so the two Macs watch each other.</p>
 <h3 id="monitoring-and-alerts">Monitoring and alerts</h3>
 <table>
 <thead>
@@ -1681,13 +1767,13 @@ recovery</h3>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Mac Studio down (Phase 2)</td>
+<td>Mac Studio down (Mac mini + Mac Studio setup)</td>
 <td>Voice server and agents stop</td>
 <td>HA automations, app tiles and wall switches keep working; voice
 devices fall back to Assist on the mini</td>
 </tr>
 <tr class="even">
-<td>Cloud workspace VM down (Phase 1)</td>
+<td>Cloud workspace VM down (Mac mini only setup)</td>
 <td>Agents stop</td>
 <td>The house is unaffected; jobs queue; rebuild the VM from its
 image</td>

@@ -172,8 +172,10 @@ AI Roadmap: Epics, Stories, Tasks</h1>
 <p>Phase 0 replaces every Alexa device and routine with Home Assistant,
 a cloud Claude assistant, custom voice devices and the phone app. Phase
 1 adds agentic work without the Mac Studio, Phase 2 moves AI and agents
-onto the Mac Studio, and Phase 3 holds the leftovers. The architecture
-and device choices come from the <a
+onto the Mac Studio, and Phase 3 holds the leftovers. Phases 0 and 1
+build the Mac mini only setup, which is a complete system if the Studio
+is never bought; Phase 2 turns it into the Mac mini + Mac Studio setup.
+The architecture and device choices come from the <a
 href="https://claude.ai/code/artifact/a2c0648c-0d0f-435d-9064-06828ca289de">Home
 Automation + AI Agent Design List</a>.</p>
 <table>
@@ -181,7 +183,7 @@ Automation + AI Agent Design List</a>.</p>
 <tr class="header">
 <th>Phase</th>
 <th>Outcome</th>
-<th>Runs on</th>
+<th>Setup</th>
 </tr>
 </thead>
 <tbody>
@@ -190,25 +192,26 @@ Automation + AI Agent Design List</a>.</p>
 <td>Secure network and always-on Mac mini; Alexa retired with every
 everyday feature and routine replaced; voice, app and widgets control
 the house; Claude answers and searches</td>
-<td>Mac mini + cloud Claude</td>
+<td>Mac mini only, with cloud Claude</td>
 </tr>
 <tr class="even">
 <td>Phase 1: Agents, no Studio</td>
 <td>Subagents with shell, browser and desktop on pinned routes; logins
 released from your phone; code changes by pull request; proactive
 briefings and alerts</td>
-<td>Mac mini + cloud Claude + a rented cloud VM for workspaces</td>
+<td>Mac mini only, with cloud Claude and a rented cloud VM for
+workspaces</td>
 </tr>
 <tr class="odd">
 <td>Phase 2: Mac Studio</td>
 <td>Local models and voice, 20+ workspaces, macOS VMs, agents spin off
 their own subagents, screens and suggestions that anticipate</td>
-<td>Mac Studio + Mac mini</td>
+<td>Mac mini + Mac Studio</td>
 </tr>
 <tr class="even">
 <td>Phase 3: Leftovers</td>
 <td>Polish, extra resilience, vision and stretch features</td>
-<td>Both</td>
+<td>Mac mini + Mac Studio</td>
 </tr>
 </tbody>
 </table>
@@ -231,6 +234,9 @@ widget. Everything runs on the TP-Link network, the Mac mini and cloud
 Claude; because there is no Mac Studio yet, voice uses Home Assistant's
 Assist pipeline on the mini with cloud speech-to-text, and moves to the
 Studio in Phase 2.</p>
+<p><strong>Setup: Mac mini only.</strong> The mini runs Home Assistant,
+Assist voice, the assistant, Tailscale and backups, calling cloud
+Claude; nothing in this phase needs the Studio.</p>
 <p><strong>Exit criteria:</strong> Main, IoT and Guest networks live; an
 external port scan of the home IP shows zero open ports; passkeys or
 two-factor on every account and no personal accounts on the server Macs;
@@ -799,6 +805,10 @@ GB, so it runs the light parts (agent backend, message bus, egress
 proxies) and the heavy workspaces run on a rented cloud VM whose traffic
 comes back through the mini's routes over Tailscale. Everything is built
 in containers so Phase 2 can move it onto the Studio unchanged.</p>
+<p><strong>Setup: Mac mini only.</strong> The mini adds the
+orchestrator, message bus, vault, credential broker and egress routes;
+workspaces and Langfuse run on a rented cloud VM routed through home. If
+the Studio is never bought, this is the finished system.</p>
 <p><strong>Exit criteria:</strong> 3 concurrent subagents with desktops;
 each job's public IP matches its route at start; a disallowed
 agent-to-agent message is blocked and logged; from the app you can
@@ -860,8 +870,8 @@ workspaces for websites</label></li>
 keyboard) for apps with no other interface</label></li>
 </ul>
 <h3 id="e13-vpn-and-egress-routes">E1.3 VPN and egress routes</h3>
-<p>Every workspace exits the internet from a named route (home home IP,
-a NordVPN country, or the TP-Link router VPN), and the job refuses to
+<p>Every workspace exits the internet from a named route (home IP, a
+NordVPN country, or the TP-Link router VPN), and the job refuses to
 start if the IP is wrong. NordVPN's own app is never installed on the
 Macs, because it would move Home Assistant onto the VPN too.</p>
 <p><strong>S1.3.1 NordVPN routes on the Mac mini</strong></p>
@@ -877,7 +887,7 @@ NordVPN DNS so a dropped tunnel or DNS lookup never leaks</label></li>
 <li><label><input type="checkbox" />Measure the mini's RAM with HA plus
 all routes running; cap the number of containers</label></li>
 </ul>
-<p><strong>S1.3.2 Home home IP route</strong></p>
+<p><strong>S1.3.2 Home IP route</strong></p>
 <ul class="task-list">
 <li><label><input type="checkbox" />Plain proxy container with no VPN as
 the <code>home</code> route, used the same way as the
@@ -1264,8 +1274,8 @@ phone app; then Signal, WhatsApp and Slack</label></li>
 <p><strong>S1.12.5 Prove it</strong></p>
 <ul class="task-list">
 <li><label><input type="checkbox" />End to end on the Mac mini with
-Claude; then on the Studio with a local model in private
-mode</label></li>
+Claude (Mac mini only setup); then on the Studio with a local model in
+private mode (Mac mini + Mac Studio setup)</label></li>
 <li><label><input type="checkbox" />Voice moves onto the router after
 the local model benchmark (S2.3.1)</label></li>
 </ul>
@@ -1276,6 +1286,10 @@ all on the Mac Studio, the cloud workspace VM switched off, and the
 orchestrator spinning off 5 or more subagents (Linux desktops and macOS
 VMs) on its own. The Mac mini goes back to only running the house and
 the egress routes.</p>
+<p><strong>Setup: Mac mini + Mac Studio.</strong> The Studio takes the
+agent runtime, workspaces, macOS VMs, local models and the voice server;
+the mini keeps Home Assistant, the vault, the broker and the egress
+routes, and the cloud VM is retired.</p>
 <p><strong>Exit criteria:</strong> 5+ concurrent subagents with
 desktops, 20+ possible; up to 2 macOS VM workspaces; voice runs locally
 with cloud fallback; private and offline requests answered by the local

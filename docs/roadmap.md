@@ -4,14 +4,14 @@ Oct 17, 2026
 
 ## How to read this roadmap
 
-Phase 0 replaces every Alexa device and routine with Home Assistant, a cloud Claude assistant, custom voice devices and the phone app. Phase 1 adds agentic work without the Mac Studio, Phase 2 moves AI and agents onto the Mac Studio, and Phase 3 holds the leftovers. The architecture and device choices come from the [Home Automation + AI Agent Design List](https://claude.ai/code/artifact/a2c0648c-0d0f-435d-9064-06828ca289de).
+Phase 0 replaces every Alexa device and routine with Home Assistant, a cloud Claude assistant, custom voice devices and the phone app. Phase 1 adds agentic work without the Mac Studio, Phase 2 moves AI and agents onto the Mac Studio, and Phase 3 holds the leftovers. Phases 0 and 1 build the Mac mini only setup, which is a complete system if the Studio is never bought; Phase 2 turns it into the Mac mini + Mac Studio setup. The architecture and device choices come from the [Home Automation + AI Agent Design List](https://claude.ai/code/artifact/a2c0648c-0d0f-435d-9064-06828ca289de).
 
-| Phase | Outcome | Runs on |
+| Phase | Outcome | Setup |
 | --- | --- | --- |
-| Phase 0: Home and voice | Secure network and always-on Mac mini; Alexa retired with every everyday feature and routine replaced; voice, app and widgets control the house; Claude answers and searches | Mac mini + cloud Claude |
-| Phase 1: Agents, no Studio | Subagents with shell, browser and desktop on pinned routes; logins released from your phone; code changes by pull request; proactive briefings and alerts | Mac mini + cloud Claude + a rented cloud VM for workspaces |
-| Phase 2: Mac Studio | Local models and voice, 20+ workspaces, macOS VMs, agents spin off their own subagents, screens and suggestions that anticipate | Mac Studio + Mac mini |
-| Phase 3: Leftovers | Polish, extra resilience, vision and stretch features | Both |
+| Phase 0: Home and voice | Secure network and always-on Mac mini; Alexa retired with every everyday feature and routine replaced; voice, app and widgets control the house; Claude answers and searches | Mac mini only, with cloud Claude |
+| Phase 1: Agents, no Studio | Subagents with shell, browser and desktop on pinned routes; logins released from your phone; code changes by pull request; proactive briefings and alerts | Mac mini only, with cloud Claude and a rented cloud VM for workspaces |
+| Phase 2: Mac Studio | Local models and voice, 20+ workspaces, macOS VMs, agents spin off their own subagents, screens and suggestions that anticipate | Mac mini + Mac Studio |
+| Phase 3: Leftovers | Polish, extra resilience, vision and stretch features | Mac mini + Mac Studio |
 
 **IDs.** Epics are `E<phase>.<n>`, stories are `S<phase>.<epic>.<n>`, and tasks are the checkboxes under each story, so you can tick them off here or copy them into a tracker.
 
@@ -20,6 +20,8 @@ Phase 0 replaces every Alexa device and routine with Home Assistant, a cloud Cla
 ## Phase 0: Home automation and Alexa replacement
 
 Phase 0 ends with every Echo unplugged, every Alexa routine running in Home Assistant, and Claude answering questions by voice, app and widget. Everything runs on the TP-Link network, the Mac mini and cloud Claude; because there is no Mac Studio yet, voice uses Home Assistant's Assist pipeline on the mini with cloud speech-to-text, and moves to the Studio in Phase 2.
+
+**Setup: Mac mini only.** The mini runs Home Assistant, Assist voice, the assistant, Tailscale and backups, calling cloud Claude; nothing in this phase needs the Studio.
 
 **Exit criteria:** Main, IoT and Guest networks live; an external port scan of the home IP shows zero open ports; passkeys or two-factor on every account and no personal accounts on the server Macs; all devices controllable by voice and app; every everyday Alexa feature you used (timers, alarms, reminders, announcements, weather, news, stocks, music, lists, calendar) works by voice and app; every inventoried Alexa routine migrated and run for 2 weeks; simple commands under 1.5 s; the house keeps working with the internet down; app works away from home over Tailscale; all Echos removed.
 
@@ -345,6 +347,8 @@ The Alexa account no longer controls anything in the house.
 
 Phase 1 ends with at least 3 subagents running at once, each with shell, browser and desktop, each exiting from its assigned IP, and all of them watchable and controllable from the app. The Mac mini has only 8 GB, so it runs the light parts (agent backend, message bus, egress proxies) and the heavy workspaces run on a rented cloud VM whose traffic comes back through the mini's routes over Tailscale. Everything is built in containers so Phase 2 can move it onto the Studio unchanged.
 
+**Setup: Mac mini only.** The mini adds the orchestrator, message bus, vault, credential broker and egress routes; workspaces and Langfuse run on a rented cloud VM routed through home. If the Studio is never bought, this is the finished system.
+
 **Exit criteria:** 3 concurrent subagents with desktops; each job's public IP matches its route at start; a disallowed agent-to-agent message is blocked and logged; from the app you can watch, pause, approve, take over and kill; logins, purchases, sending, deletions and code changes wait for Face ID approval on your phone; passwords never appear in prompts, logs or screenshots; the transit reimbursement job (S1.10.1) runs end to end with two approvals; an agent code change that fails tests or health checks never stays deployed; 30-day searchable audit log; the morning briefing and leave-now alerts arrive unprompted in the room you are in, never during quiet hours.
 
 ### E1.1 Agent backend becomes the single decision maker
@@ -383,7 +387,7 @@ The agent reaches the world through tools in a fixed order: APIs and MCP first, 
 
 ### E1.3 VPN and egress routes
 
-Every workspace exits the internet from a named route (home home IP, a NordVPN country, or the TP-Link router VPN), and the job refuses to start if the IP is wrong. NordVPN's own app is never installed on the Macs, because it would move Home Assistant onto the VPN too.
+Every workspace exits the internet from a named route (home IP, a NordVPN country, or the TP-Link router VPN), and the job refuses to start if the IP is wrong. NordVPN's own app is never installed on the Macs, because it would move Home Assistant onto the VPN too.
 
 **S1.3.1 NordVPN routes on the Mac mini**
 
@@ -392,7 +396,7 @@ Every workspace exits the internet from a named route (home home IP, a NordVPN c
 - [ ] Rely on Gluetun's kill switch and NordVPN DNS so a dropped tunnel or DNS lookup never leaks
 - [ ] Measure the mini's RAM with HA plus all routes running; cap the number of containers
 
-**S1.3.2 Home home IP route**
+**S1.3.2 Home IP route**
 
 - [ ] Plain proxy container with no VPN as the `home` route, used the same way as the others
 
@@ -632,12 +636,14 @@ One harness gives the features of Meta Muse, Claude Cowork and Dispatch, OpenCla
 
 **S1.12.5 Prove it**
 
-- [ ] End to end on the Mac mini with Claude; then on the Studio with a local model in private mode
+- [ ] End to end on the Mac mini with Claude (Mac mini only setup); then on the Studio with a local model in private mode (Mac mini + Mac Studio setup)
 - [ ] Voice moves onto the router after the local model benchmark (S2.3.1)
 
 ## Phase 2: Mac Studio brings agents and AI home
 
 Phase 2 ends with the agent runtime, voice server and local models all on the Mac Studio, the cloud workspace VM switched off, and the orchestrator spinning off 5 or more subagents (Linux desktops and macOS VMs) on its own. The Mac mini goes back to only running the house and the egress routes.
+
+**Setup: Mac mini + Mac Studio.** The Studio takes the agent runtime, workspaces, macOS VMs, local models and the voice server; the mini keeps Home Assistant, the vault, the broker and the egress routes, and the cloud VM is retired.
 
 **Exit criteria:** 5+ concurrent subagents with desktops, 20+ possible; up to 2 macOS VM workspaces; voice runs locally with cloud fallback; private and offline requests answered by the local model; house and basic voice keep working when the Studio is off; you can interrupt a long answer, and Show screens put up the right card on their own.
 
